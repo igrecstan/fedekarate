@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Clubs - FI-ADEKASH Admin</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/clubs.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Gestion des Clubs</div>
+                <div class="topbar-user">
+                    <div class="avatar" id="userAvatar">AD</div>
+                    <span id="userName">Administrateur</span>
+                </div>
+            </div>
+            <div class="content">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Rechercher...">
+                        <button class="btn-primary" onclick="searchClubs()">
+                            <i class="fas fa-search"></i> Rechercher
+                        </button>
+                    </div>
+                    <button class="btn-primary" onclick="window.location.href='clubs-new.html'">
+                        <i class="fas fa-plus"></i> Nouveau Club
+                    </button>
+                </div>
+                <div class="table-container">
+                    <div class="table-container">
+                        <table id="clubsTable">
+                            <thead>
+                                <tr id="headerRow">
+                                    <th class="sortable-header">
+                                        N°
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'numero')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Secteur
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'secteur')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Nom
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'nom')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Num Club
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'numClub')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Représentant
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'representant')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Contact
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'contact')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header">
+                                        Statut
+                                        <span class="filter-icon" onclick="showFilterMenu(event, 'statut')">
+                                            <i class="fas fa-filter"></i>
+                                        </span>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clubsTableBody">
+                                <tr>
+                                    <td colspan="8" class="loader">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Menu déroulant de filtre (style Excel) -->
+                    <div id="filterMenu" class="filter-menu" style="display: none;">
+                        <div class="filter-menu-header">
+                            <span id="filterMenuTitle">Filtrer</span>
+                            <span class="filter-menu-close" onclick="hideFilterMenu()">&times;</span>
+                        </div>
+                        <div class="filter-menu-body">
+                            <div class="filter-search">
+                                <input type="text" id="filterSearchInput" placeholder="Rechercher...">
+                            </div>
+                            <div class="filter-options" id="filterOptions">
+                                <!-- Les options seront chargées dynamiquement -->
+                            </div>
+                        </div>
+                        <div class="filter-menu-footer">
+                            <button class="filter-btn-clear" onclick="clearCurrentFilter()">Effacer</button>
+                            <button class="filter-btn-ok" onclick="applyFilter()">OK</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Ajout/Modification Club -->
+    <div id="clubModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Ajouter un Club</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="clubForm">
+                    <input type="hidden" id="clubId">
+                    <input type="hidden" id="identifClub">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="required">Nom du Club</label>
+                            <input type="text" id="nomClub" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="required">Secteur</label>
+                            <select id="secteur" required>
+                                <option value="">Sélectionner</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="required">Représentant</label>
+                            <input type="text" id="representant" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Grade</label>
+                            <select id="grade">
+                                <option value="">Sélectionner</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="required">Contact</label>
+                            <input type="tel" id="contact" required>
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp</label>
+                            <input type="tel" id="whatsapp">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label>N° Déclaration</label>
+                            <input type="text" id="numDeclaration">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+                <button class="btn-save" onclick="saveClub()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmation suppression -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Confirmer la suppression</h2>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage"></p>
+                <p style="font-size:12px;color:#e53e3e; margin-top:10px;">
+                    <i class="fas fa-warning"></i> Action irréversible !
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Annuler</button>
+                <button class="btn-save" id="confirmDeleteBtn" style="background:#e53e3e">Supprimer</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/clubs.js"></script>
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

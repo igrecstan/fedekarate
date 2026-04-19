@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier un Licencié - FI-ADEKASH Admin</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .card-header h2 {
+            color: #667eea;
+            font-size: 22px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 5px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input[readonly] {
+            background-color: #f7fafc;
+            cursor: not-allowed;
+        }
+
+        .required:after {
+            content: " *";
+            color: #e53e3e;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancel {
+            background: #a0aec0;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #718096;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .error-border {
+            border-color: #e53e3e !important;
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            font-size: 13px;
+            z-index: 1100;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast-success {
+            background: #48bb78;
+        }
+
+        .toast-error {
+            background: #f56565;
+        }
+
+        .toast-warning {
+            background: #ed8936;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #667eea;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Modifier un Licencié</div>
+                <div class="topbar-user">
+                    <div class="avatar">AD</div>
+                    <span>Administrateur</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="form-container">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-user-edit"></i> Modifier le licencié</h2>
+                        </div>
+
+                        <form id="licencieForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Numéro de licence</label>
+                                    <input type="text" id="num_licence" readonly class="generated-field"
+                                        style="width: 100%; background:#f7fafc;">
+                                </div>
+                                <div class="form-group">
+                                    <label class="required">Nom</label>
+                                    <input type="text" id="nom" placeholder="NOM" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="required">Prénom</label>
+                                    <input type="text" id="prenom" placeholder="Prénom" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Secteur</label>
+                                    <select id="id_secteur">
+                                        <option value="">Sélectionner un secteur</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="required">Club</label>
+                                    <select id="id_club" required>
+                                        <option value="">Sélectionner un club</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Saison</label>
+                                    <select id="id_saison">
+                                        <option value="">Sélectionner une saison</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Grade</label>
+                                    <select id="grade">
+                                        <option value="">Sélectionner un grade</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="required">Contact</label>
+                                    <input type="tel" id="contact" placeholder="01XXXXXXXX ou 05XXXXXXXX ou 07XXXXXXXX"
+                                        required>
+                                    <span class="error-message" id="contactError" style="display: none;">Le numéro doit
+                                        commencer par 01, 05 ou 07 et contenir 10 chiffres</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="email" placeholder="email@exemple.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Date de naissance</label>
+                                    <input type="date" id="date_naissance">
+                                </div>
+                                <div class="form-group">
+                                    <label>Adresse</label>
+                                    <input type="text" id="adresse" placeholder="Adresse complète">
+                                </div>
+                                <div class="form-group">
+                                    <label>Statut</label>
+                                    <select id="statut">
+                                        <option value="actif">Actif</option>
+                                        <option value="inactif">Inactif</option>
+                                        <option value="en_attente">En attente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-cancel"
+                                    onclick="window.location.href='licencies-club.html'">Annuler</button>
+                                <button type="submit" class="btn-submit">Mettre à jour</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/licencies.js"></script>
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

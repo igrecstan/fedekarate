@@ -1,0 +1,72 @@
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <img src="../images/logo.jpg" alt="Logo FI-ADEKASH" onerror="this.src='https://via.placeholder.com/40'">
+        <div>
+            <div class="brand">FI-ADEKASH</div>
+            <small>Administration</small>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Navigation</div>
+        <a href="admin-dashboard.html" data-page="dashboard" class="nav-main">
+            <i class="fas fa-tachometer-alt"></i> <span>Tableau de bord</span>
+        </a>
+
+        <!-- Menu Clubs avec sous-menu -->
+        <div class="has-submenu" id="clubsMenu">
+            <div class="nav-link" onclick="window.toggleSubmenu(event)">
+                <i class="fas fa-building"></i> <span>Clubs</span>
+                <i class="fas fa-chevron-down submenu-arrow"></i>
+            </div>
+            <div class="submenu" id="clubsSubmenu">
+                <a href="clubs.html" data-page="clubs" class="submenu-link">
+                    <i class="fas fa-list"></i> <span>Liste des clubs</span>
+                </a>
+                <a href="clubs-saison.html" data-page="clubs-saison" class="submenu-link">
+                    <i class="fas fa-calendar-alt"></i> <span>Clubs par saison</span>
+                </a>
+                <a href="clubs-new.html" data-page="clubs-new" class="submenu-link">
+                    <i class="fas fa-plus-circle"></i> <span>Nouveau club</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Menu Licenciés avec sous-menu -->
+        <div class="has-submenu" id="licenciesMenu">
+            <div class="nav-link" onclick="window.toggleSubmenu(event)">
+                <i class="fas fa-id-card"></i> <span>Licenciés</span>
+                <i class="fas fa-chevron-down submenu-arrow"></i>
+            </div>
+            <div class="submenu" id="licenciesSubmenu">
+                <a href="licencies-club.html" data-page="licencies-club" class="submenu-link">
+                    <i class="fas fa-users"></i> <span>Licenciés par club</span>
+                </a>
+                <a href="licencies-new.html" data-page="licencies-new" class="submenu-link">
+                    <i class="fas fa-user-plus"></i> <span>Nouveau licencié</span>
+                </a>
+            </div>
+        </div>
+
+        <a href="evenements.html" data-page="evenements" class="nav-main">
+            <i class="fas fa-calendar-alt"></i> <span>Événements</span>
+        </a>
+        <a href="documents.html" data-page="documents" class="nav-main">
+            <i class="fas fa-folder-open"></i> <span>Documents</span>
+        </a>
+        <a href="messages.html" data-page="messages" class="nav-main">
+            <i class="fas fa-envelope"></i> <span>Messages</span>
+            <span class="badge-message" id="unreadBadge">0</span>
+        </a>
+        <a href="statistiques.html" data-page="statistiques" class="nav-main">
+            <i class="fas fa-chart-bar"></i> <span>Statistiques</span>
+        </a>
+        <a href="utilisateurs.html" data-page="utilisateurs" class="nav-main">
+            <i class="fas fa-users-cog"></i> <span>Utilisateurs</span>
+        </a>
+    </nav>
+    <div class="sidebar-bottom">
+        <button id="btnDeconnexion">
+            <i class="fas fa-sign-out-alt"></i> <span>Déconnexion</span>
+        </button>
+    </div>
+</div>

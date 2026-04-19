@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Événements - FI-ADEKASH Admin</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .btn-add {
+            background: #3AAA35;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-add:hover {
+            background: #FBAC0D;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Gestion des événements</div>
+                <div class="topbar-user">
+                    <div class="avatar">AD</div>
+                    <span>Administrateur</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="page-header">
+                    <h2>Gestion des événements</h2>
+                    <p>Gérez le calendrier des compétitions et stages.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Événements</h3>
+                        <button class="btn-add" id="btnAddEvent"><i class="fas fa-plus"></i> Ajouter</button>
+                    </div>
+
+                    <div class="hidden" id="formAddEvent">
+                        <div class="form-grid">
+                            <div><label>Nom de l'événement *</label><input type="text" id="eventName"
+                                    placeholder="Ex. Championnat régional"></div>
+                            <div><label>Date *</label><input type="date" id="eventDate"></div>
+                            <div><label>Lieu *</label><input type="text" id="eventLocation" placeholder="Ex. Abidjan">
+                            </div>
+                            <div><label>Type</label><select id="eventType">
+                                    <option>Compétition</option>
+                                    <option>Stage</option>
+                                    <option>Réunion</option>
+                                    <option>Gala</option>
+                                </select></div>
+                            <div class="full"><label>Description</label><textarea id="eventDesc" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-save" id="btnSaveEvent">Enregistrer</button>
+                            <button class="btn-cancel" id="btnCancelEvent">Annuler</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Événement</th>
+                                    <th>Lieu</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsTableBody">
+                                <tr>
+                                    <td colspan="6" class="loader">Chargement...</td>
+                                </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Événement</h3><span class="close" onclick="closeEventModal()">&times;</span>
+            </div>
+            <input type="hidden" id="eventId">
+            <div class="form-group"><label>Nom</label><input type="text" id="modalEventName"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="modalEventDate"></div>
+            <div class="form-group"><label>Lieu</label><input type="text" id="modalEventLocation"></div>
+            <div class="form-group"><label>Type</label><select id="modalEventType">
+                    <option>Compétition</option>
+                    <option>Stage</option>
+                    <option>Réunion</option>
+                    <option>Gala</option>
+                </select></div>
+            <div class="form-group"><label>Description</label><textarea id="modalEventDesc" rows="3"></textarea></div>
+            <div class="modal-buttons"><button class="btn-save"
+                    onclick="saveEventFromModal()">Enregistrer</button><button class="btn-cancel"
+                    onclick="closeEventModal()">Annuler</button></div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script src="js/sidebar-loader.js"></script>
+</body>
+
+</html>

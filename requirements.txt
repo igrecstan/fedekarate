@@ -1,0 +1,2 @@
+# Serveur web + API (formulaires, auth club, etc.)
+flask>=3.0.0
