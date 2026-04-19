@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents - FI-ADEKASH Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .btn-add { background: #3AAA35; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-add:hover { background: #FBAC0D; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Gestion des documents</div>
+                <div class="topbar-user">
+                    <div class="avatar">AD</div>
+                    <span>Administrateur</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="page-header">
+                    <h2>Gestion des documents</h2>
+                    <p>Publiez et gérez les documents accessibles aux clubs.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Documents publiés</h3>
+                        <button class="btn-add" id="btnAddDoc"><i class="fas fa-plus"></i> Ajouter</button>
+                    </div>
+
+                    <div class="hidden" id="formAddDoc">
+                        <div class="form-grid">
+                            <div><label>Titre du document *</label><input type="text" id="docTitle" placeholder="Ex. Statuts 2025"></div>
+                            <div><label>Catégorie</label><select id="docCategory"><option>Statuts & règlements</option><option>Circulaires</option><option>Formulaires</option><option>Résultats</option></select></div>
+                            <div class="full"><label>Fichier (URL) *</label><input type="text" id="docUrl" placeholder="/documents/statuts-2025.pdf"></div>
+                        </div>
+                        <div class="form-actions"><button class="btn-save" id="btnSaveDoc">Publier</button><button class="btn-cancel" id="btnCancelDoc">Annuler</button></div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Titre</th><th>Catégorie</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody id="documentsTableBody"><tr><td colspan="5" class="loader">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let documentsData = [];
+
+        async function loadDocuments() {
+            document.getElementById('documentsTableBody').innerHTML = '<tr><td colspan="5" class="loader"><i class="fas fa-spinner fa-spin"></i> Chargement...</td></tr>';
+            try {
+                const response = await fetch('/api/admin/documents');
+                const result = await response.json();
+                if (result.success) { documentsData = result.documents || []; displayDocuments(); }
+            } catch(e) { console.error(e); }
+        }
+
+        function displayDocuments() {
+            if (!documentsData.length) { document.getElementById('documentsTableBody').innerHTML = '<td><td colspan="5" class="loader">Aucun document</td></tr>'; return; }
+            document.getElementById('documentsTableBody').innerHTML = documentsData.map(doc => `
+                <tr>
+                    <td><i class="fas ${doc.url?.includes('.pdf') ? 'fa-file-pdf' : 'fa-file'}" style="color:#e63946; margin-right:8px;"></i> ${escapeHtml(doc.title)}</td>
+                    <td>${escapeHtml(doc.category)}</td>
+                    <td>${formatDate(doc.date)}</td>
+                    <td><span class="badge badge-green">${doc.status || 'En ligne'}</span></td>
+                    <td><button class="btn-action" onclick="editDocument(${doc.id})"><i class="fas fa-pen"></i> Modifier</button><button class="btn-action danger" onclick="deleteDocument(${doc.id})"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function saveDocument() {
+            const data = { title: document.getElementById('docTitle').value, category: document.getElementById('docCategory').value, url: document.getElementById('docUrl').value };
+            if (!data.title || !data.url) { showNotification('Champs obligatoires', 'error'); return; }
+            try {
+                const response = await fetch('/api/admin/documents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (result.success) { showNotification('Document ajouté'); toggleDocForm(); loadDocuments(); }
+            } catch(e) { showNotification('Erreur', 'error'); }
+        }
+
+        async function deleteDocument(id) {
+            if (!confirm('Supprimer ce document ?')) return;
+            try {
+                const response = await fetch(`/api/admin/documents/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) { showNotification('Document supprimé'); loadDocuments(); }
+            } catch(e) { showNotification('Erreur', 'error'); }
+        }
+
+        function editDocument(id) { alert('Fonctionnalité à implémenter'); }
+        function toggleDocForm() { document.getElementById('formAddDoc').classList.toggle('hidden'); }
+
+        document.getElementById('btnAddDoc').onclick = toggleDocForm;
+        document.getElementById('btnSaveDoc').onclick = saveDocument;
+        document.getElementById('btnCancelDoc').onclick = toggleDocForm;
+        loadDocuments();
+    </script>
+</body>
+</html>

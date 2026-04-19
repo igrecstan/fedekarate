@@ -1,0 +1,17 @@
+admin/
+├── admin-login.html
+├── admin-dashboard.html
+├── clubs.html
+├── evenements.html
+├── documents.html
+├── messages.html
+├── sidebar.html
+├── css/
+│   └── admin.css
+└── js/
+    ├── admin.js
+    ├── clubs.js
+    ├── dashboard.js
+    ├── documents.js
+    ├── evenements.js
+    └── messages.js

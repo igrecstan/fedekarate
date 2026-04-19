@@ -1,0 +1,219 @@
+<div class="club-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <img src="../images/logo.jpg" alt="Logo FI-ADEKASH" class="sidebar-logo-img">
+            <span>FI-ADEKASH</span>
+        </div>
+        <div class="sidebar-club-info">
+            <span class="club-badge" id="sidebarClubId">-</span>
+            <span class="club-name" id="sidebarClubNom">-</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="espace.html" class="nav-link" data-page="dashboard">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Tableau de bord</span>
+        </a>
+        <a href="profil.html" class="nav-link" data-page="profil">
+            <i class="fas fa-building"></i>
+            <span>Mon club</span>
+        </a>
+        <a href="licencies.html" class="nav-link" data-page="licencies">
+            <i class="fas fa-users"></i>
+            <span>Licenciés</span>
+        </a>
+        <a href="competitions.html" class="nav-link" data-page="competitions">
+            <i class="fas fa-trophy"></i>
+            <span>Compétitions</span>
+        </a>
+        <a href="documents.html" class="nav-link" data-page="documents">
+            <i class="fas fa-folder-open"></i>
+            <span>Documents</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <button id="logoutBtn" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Déconnexion</span>
+        </button>
+    </div>
+</div>
+
+<style>
+    .club-sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #4BCF27 0%, #4BCF27 100%);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        position: sticky;
+        top: 0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-header {
+        padding: 2rem 1.5rem;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        margin-bottom: 1.5rem;
+    }
+
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .sidebar-logo-img {
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .sidebar-club-info {
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        padding: 0.75rem;
+    }
+
+    .club-badge {
+        display: block;
+        font-size: 0.7rem;
+        color: #2A2A2A;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.25rem;
+    }
+
+    .club-name {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        word-break: break-word;
+    }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 0 1rem;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.875rem 1rem;
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link i {
+        width: 24px;
+        font-size: 1.1rem;
+    }
+
+    .nav-link:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+
+    .nav-link.active {
+        background: rgba(255,255,255,0.25);
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .sidebar-footer {
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #FBAC0D;
+        border: none;
+        color: white;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .logout-btn:hover {
+        background: #E69A00;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 768px) {
+        .club-sidebar {
+            position: fixed;
+            left: -280px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+        }
+        
+        .club-sidebar.mobile-open {
+            left: 0;
+        }
+        
+        body.sidebar-open {
+            overflow: hidden;
+        }
+    }
+</style>
+
+<script>
+    (function loadClubInfo() {
+        const clubId = sessionStorage.getItem('clubId');
+        const clubNom = sessionStorage.getItem('clubNom');
+        
+        if (clubId) {
+            const clubIdSpan = document.getElementById('sidebarClubId');
+            const clubNomSpan = document.getElementById('sidebarClubNom');
+            if (clubIdSpan) clubIdSpan.textContent = `#${clubId}`;
+            if (clubNomSpan) clubNomSpan.textContent = clubNom || clubId;
+        }
+    })();
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await fetch('/api/club/logout', { method: 'POST' });
+            } catch(e) {
+                console.error('Erreur déconnexion:', e);
+            }
+            sessionStorage.clear();
+            window.location.href = 'connexion.html';
+        });
+    }
+
+    (function highlightActivePage() {
+        const currentPage = window.location.pathname.split('/').pop();
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    })();
+</script>
