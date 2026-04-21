@@ -81,6 +81,26 @@
             background: #718096;
         }
 
+        .btn-export {
+            background: #2f855a;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-export:hover {
+            background: #276749;
+        }
+
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -273,6 +293,9 @@
                     <button class="btn-reset" onclick="resetFilters()">
                         <i class="fas fa-undo-alt"></i> Réinitialiser
                     </button>
+                    <button class="btn-export" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Exporter Excel
+                    </button>
                 </div>
 
                 <!-- Tableau des clubs -->
@@ -305,6 +328,7 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/clubs-saison.js"></script>
 

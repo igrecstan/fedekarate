@@ -2,7 +2,7 @@ import logging
 import datetime
 import bcrypt
 from flask import Blueprint, jsonify, request, session
-from db_utils import get_db_connection
+from db_utils import get_db_connection, update_activity_statuses
 from mysql.connector import Error
 
 admin_bp = Blueprint('admin_api', __name__, url_prefix='/api/admin')
@@ -116,9 +116,10 @@ def get_clubs():
         cursor = conn.cursor(dictionary=True)
         
         query = """
-            SELECT c.*, s.nom_secteur as secteur 
+            SELECT c.*, s.nom_secteur as secteur, g.libelle as grade_name
             FROM club c 
             LEFT JOIN secteur s ON c.List_sect = s.id_secteur
+            LEFT JOIN grade g ON c.grade = g.id_grade
         """
         params = []
         if search:
@@ -163,15 +164,185 @@ def get_all_clubs():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         query = """
-            SELECT c.*, s.nom_secteur as secteur 
+            SELECT c.*, s.nom_secteur as secteur, g.libelle as grade_name
             FROM club c 
             LEFT JOIN secteur s ON c.List_sect = s.id_secteur 
+            LEFT JOIN grade g ON c.grade = g.id_grade
             ORDER BY s.nom_secteur ASC, c.nom_club ASC
         """
         cursor.execute(query)
         clubs = cursor.fetchall()
         return jsonify({'success': True, 'clubs': clubs})
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/saisons/clubs', methods=['GET'])
+def get_saisons_clubs():
+    """Saisons ayant des clubs affiliés"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT DISTINCT s.id_saison, s.libelle_saison 
+            FROM saison s 
+            INNER JOIN clubs_saison cs ON s.id_saison = cs.List_saison 
+            ORDER BY s.libelle_saison DESC
+        """
+        cursor.execute(query)
+        saisons = cursor.fetchall()
+        return jsonify({'success': True, 'saisons': saisons})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/secteurs/saison/<int:saison_id>', methods=['GET'])
+def get_secteurs_saison(saison_id):
+    """Secteurs ayant des clubs affiliés pour une saison donnée"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT DISTINCT sect.id_secteur, sect.nom_secteur 
+            FROM secteur sect 
+            INNER JOIN clubs_saison cs ON sect.id_secteur = cs.List_sect 
+            WHERE cs.List_saison = %s 
+            ORDER BY sect.nom_secteur ASC
+        """
+        cursor.execute(query, (saison_id,))
+        secteurs = cursor.fetchall()
+        return jsonify({'success': True, 'secteurs': secteurs})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/clubs-saison', methods=['GET'])
+def get_clubs_saison():
+    """Liste des clubs pour une saison et optionnellement un secteur"""
+    saison_id = request.args.get('saison', type=int)
+    secteur_id = request.args.get('secteur', type=int)
+    
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+            SELECT c.*, s.nom_secteur as secteur, cs.created_At as date_affiliation, g.libelle as grade_name
+            FROM clubs_saison cs 
+            JOIN club c ON cs.List_club = c.id_club 
+            JOIN secteur s ON cs.List_sect = s.id_secteur 
+            LEFT JOIN grade g ON c.grade = g.id_grade
+            WHERE 1=1
+        """
+        params = []
+        if saison_id:
+            query += " AND cs.List_saison = %s"
+            params.append(saison_id)
+        if secteur_id:
+            query += " AND cs.List_sect = %s"
+            params.append(secteur_id)
+            
+        query += " ORDER BY s.nom_secteur ASC, c.nom_club ASC"
+        
+        cursor.execute(query, params)
+        clubs = cursor.fetchall()
+        return jsonify({'success': True, 'clubs': clubs})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/grades/club', methods=['GET'])
+def get_grades_club():
+    """Récupère les grades pour les clubs (id_grade > 14)"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id_grade, libelle FROM grade WHERE id_grade > 14 ORDER BY id_grade ASC")
+        grades = cursor.fetchall()
+        return jsonify({'success': True, 'grades': grades})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/clubs/last-identif', methods=['GET'])
+def get_last_club_identif():
+    """Récupère le dernier identifiant club pour calcul du suivant"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT identif_club FROM club ORDER BY id_club DESC LIMIT 1")
+        result = cursor.fetchone()
+        return jsonify({'success': True, 'last_identif': result['identif_club'] if result else None})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/clubs', methods=['POST'])
+def create_club():
+    """Crée un nouveau club"""
+    data = request.get_json(silent=True) or {}
+    
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Colonnes: List_sect, nom_club, identif_club, representant, grade, contact, whatapp, email, Num_declaration, statut, created_At, update_At
+        query = """
+            INSERT INTO club (List_sect, nom_club, identif_club, representant, grade, contact, whatapp, email, Num_declaration, statut, created_At, update_At)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'actif', CURDATE(), NOW())
+        """
+        params = (
+            data.get('List_sect'),
+            data.get('nom_club'),
+            data.get('identif_club'),
+            data.get('representant'),
+            data.get('grade'),
+            data.get('contact'),
+            data.get('whatsapp'),
+            data.get('email'),
+            data.get('Num_declaration')
+        )
+        
+        cursor.execute(query, params)
+        club_id = cursor.lastrowid
+        
+        # Affilier automatiquement à la saison en cours si disponible
+        cursor.execute("SELECT id_saison FROM saison ORDER BY id_saison DESC LIMIT 1")
+        saison = cursor.fetchone()
+        if saison:
+            cursor.execute("""
+                INSERT INTO clubs_saison (List_saison, List_club, List_sect, created_At)
+                VALUES (%s, %s, %s, CURDATE())
+            """, (saison[0], club_id, data.get('List_sect')))
+            
+        conn.commit()
+        return jsonify({'success': True, 'id': club_id})
+    except Exception as e:
+        if conn: conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         if cursor: cursor.close()

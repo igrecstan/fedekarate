@@ -2,7 +2,8 @@
 <nav class="navbar">
     <div class="nav-container">
         <a href="index.html" class="logo">
-            <img src="../images/logo.jpg" alt="Logo FI-ADEKASH" style="height:54px; width:auto; border-radius:50%; object-fit:cover;">
+            <img src="../images/logo.jpg" alt="Logo FI-ADEKASH"
+                style="height:54px; width:auto; border-radius:50%; object-fit:cover;">
             <h1>FI-ADEKASH<span></span></h1>
         </a>
         <div class="menu-toggle" id="mobileMenu">
@@ -11,7 +12,14 @@
         <ul class="nav-links" id="navLinks">
             <li><a href="index.html#accueil">Accueil</a></li>
             <li><a href="apropos.html">A propos</a></li>
-            <li><a href="index.html#clubs">Membres</a></li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle">Membres <i class="fas fa-chevron-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="secteurs.html">Secteurs</a></li>
+                    <li><a href="clubs.html">Clubs affiliés</a></li>
+                    <li><a href="ceintures-noires.html">Ceintures noires</a></li>
+                </ul>
+            </li>
             <li><a href="events.html">Événements</a></li>
             <li><a href="espace-club/connexion.html">Espace club</a></li>
             <li><a href="contacts.html">Contact</a></li>

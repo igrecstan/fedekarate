@@ -145,7 +145,7 @@ function displayClubs() {
         const row = tbody.insertRow();
         const orderNumber = startNumber + index;
         const dateInscription = formatDate(club.created_At);
-        const gradeValue = club.grade || '-';
+        const gradeValue = club.grade_name || '-';
 
         row.className = 'club-row';
         row.innerHTML = `
@@ -250,3 +250,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         secteurSelect.addEventListener('change', onSecteurChange);
     }
 });
+
+// Export Excel
+function exportToExcel() {
+    if (!allClubs || allClubs.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+
+    const saisonLabel = document.getElementById('saisonSelect').options[document.getElementById('saisonSelect').selectedIndex].text;
+    const secteurLabel = document.getElementById('secteurSelect').options[document.getElementById('secteurSelect').selectedIndex].text;
+
+    // Préparer les données pour l'export
+    const dataToExport = allClubs.map((club, index) => ({
+        'N°': index + 1,
+        'Secteur': club.secteur || '-',
+        'Nom du Club': club.nom_club || '-',
+        'Identifiant': club.identif_club || '-',
+        'Représentant': club.representant || '-',
+        'Grade': club.grade || '-',
+        'Contact': club.contact || '-',
+        'Date Affiliation': formatDate(club.date_affiliation)
+    }));
+
+    // Créer un classeur Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "Clubs par Saison");
+
+    // Générer le fichier et déclencher le téléchargement
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `Clubs_${saisonLabel.replace(/\s+/g, '_')}_${secteurLabel.replace(/\s+/g, '_')}_${date}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+}
