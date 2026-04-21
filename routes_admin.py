@@ -116,10 +116,10 @@ def get_clubs():
         cursor = conn.cursor(dictionary=True)
         
         query = """
-            SELECT c.*, s.nom_secteur as secteur, g.libelle as grade_name
+            SELECT c.*, s.nom_secteur as secteur, COALESCE(g.libelle, c.grade) as grade_name
             FROM club c 
             LEFT JOIN secteur s ON c.List_sect = s.id_secteur
-            LEFT JOIN grade g ON c.grade = g.id_grade
+            LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
         """
         params = []
         if search:
@@ -164,10 +164,10 @@ def get_all_clubs():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         query = """
-            SELECT c.*, s.nom_secteur as secteur, g.libelle as grade_name
+            SELECT c.*, s.nom_secteur as secteur, COALESCE(g.libelle, c.grade) as grade_name
             FROM club c 
             LEFT JOIN secteur s ON c.List_sect = s.id_secteur 
-            LEFT JOIN grade g ON c.grade = g.id_grade
+            LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
             ORDER BY s.nom_secteur ASC, c.nom_club ASC
         """
         cursor.execute(query)
@@ -239,11 +239,11 @@ def get_clubs_saison():
         cursor = conn.cursor(dictionary=True)
         
         query = """
-            SELECT c.*, s.nom_secteur as secteur, cs.created_At as date_affiliation, g.libelle as grade_name
+            SELECT c.*, s.nom_secteur as secteur, cs.created_At as date_affiliation, COALESCE(g.libelle, c.grade) as grade_name
             FROM clubs_saison cs 
             JOIN club c ON cs.List_club = c.id_club 
             JOIN secteur s ON cs.List_sect = s.id_secteur 
-            LEFT JOIN grade g ON c.grade = g.id_grade
+            LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
             WHERE 1=1
         """
         params = []

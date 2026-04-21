@@ -56,6 +56,12 @@
             transform: translateY(-10px);
             box-shadow: 0 20px 40px rgba(232, 101, 10, 0.4);
         }
+        .season-card.active {
+            background: #C8102E; /* Rouge pour l'actif */
+            transform: scale(1.05);
+            box-shadow: 0 20px 45px rgba(200, 16, 46, 0.4);
+            border: 2px solid white;
+        }
         .season-card .label {
             font-size: 0.9rem;
             text-transform: uppercase;
@@ -154,8 +160,52 @@
             font-size: 0.8rem;
             font-weight: 600;
         }
-        #clubs-container {
-            padding-bottom: 5rem;
+        /* Tableau des clubs */
+        .clubs-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            margin-bottom: 3rem;
+        }
+        .clubs-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        .clubs-table th {
+            background: #f8f9fa;
+            color: #1e2a3a;
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 15px; /* Un peu moins de padding aussi */
+            border-bottom: 2px solid #eee;
+            text-transform: uppercase;
+            font-size: 0.75rem; /* Réduit de 0.85rem */
+            letter-spacing: 0.5px;
+        }
+        .clubs-table td {
+            padding: 10px 15px; /* Un peu moins de padding */
+            border-bottom: 1px solid #f0f0f0;
+            color: #4a5568;
+            font-size: 0.85rem; /* Réduit de 0.95rem */
+        }
+        .clubs-table tr:hover {
+            background: #fcfcfc;
+        }
+        .secteur-badge {
+            background: #f0fce8;
+            color: #2aa600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .club-id-tag {
+            color: #d69213;
+            font-weight: 700;
+            font-family: monospace;
         }
         .loading {
             text-align: center;
@@ -195,7 +245,10 @@
     </div>
 
     <main class="container" id="clubs-container">
-        <!-- Contenu simplifié : uniquement le slider au-dessus -->
+        <h3 id="current-view-title" style="text-align: center; color: #1e2a3a; margin-top: 40px; margin-bottom: 20px; font-family: 'Playfair Display', serif;"></h3>
+        <div id="clubs-list">
+            <!-- La liste des clubs s'affichera ici après clic -->
+        </div>
     </main>
 
     <div id="site-footer"></div>
@@ -203,6 +256,7 @@
     <script src="js/layout.js"></script>
     <script>
         let allSeasons = [];
+        let selectedSaisonId = null;
 
         async function loadSeasons() {
             try {
@@ -222,7 +276,8 @@
             slider.innerHTML = '';
             allSeasons.forEach(s => {
                 const card = document.createElement('div');
-                card.className = 'season-card';
+                card.className = `season-card ${selectedSaisonId === s.id_saison ? 'active' : ''}`;
+                card.onclick = () => selectSaison(s.id_saison, s.libelle_saison);
                 
                 // Extraire l'année du libellé (ex: "SAISON 2026" -> "2026")
                 const year = String(s.libelle_saison).replace('SAISON', '').trim();
@@ -235,6 +290,72 @@
                 `;
                 slider.appendChild(card);
             });
+        }
+
+        async function selectSaison(id, label) {
+            selectedSaisonId = id;
+            document.getElementById('current-view-title').textContent = `Liste des clubs affiliés — ${label}`;
+            
+            // Mise à jour visuelle des cartes
+            renderSeasons();
+
+            await loadClubs(id);
+            
+            // Scroll fluide vers la liste
+            document.getElementById('clubs-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadClubs(saisonId) {
+            const listDiv = document.getElementById('clubs-list');
+            listDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Chargement de la liste...</div>';
+            
+            try {
+                const response = await fetch(`/api/clubs?saison=${saisonId}`);
+                const data = await response.json();
+
+                if (data.success && data.clubs.length > 0) {
+                    let tableHTML = `
+                        <div class="clubs-table-container">
+                            <table class="clubs-table">
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Secteur</th>
+                                        <th>Nom du Club</th>
+                                        <th>Représentant</th>
+                                        <th>Grade</th>
+                                        <th>Contact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    data.clubs.forEach((club, index) => {
+                        tableHTML += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><span class="secteur-badge">${club.secteur || '-'}</span></td>
+                                <td><strong>${club.nom_club}</strong></td>
+                                <td>${club.representant}</td>
+                                <td><span class="badge-grade">${club.grade || '-'}</span></td>
+                                <td>${club.contact || '-'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    listDiv.innerHTML = tableHTML;
+                } else {
+                    listDiv.innerHTML = '<p class="loading">Aucun club affilié trouvé pour cette saison.</p>';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                listDiv.innerHTML = '<p class="loading">Erreur lors du chargement des clubs.</p>';
+            }
         }
 
         // Navigation Slider

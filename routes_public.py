@@ -62,7 +62,7 @@ def api_clubs():
             cursor = conn.cursor(dictionary=True)
             
             query = """
-                SELECT c.nom_club, c.identif_club, c.representant, s.nom_secteur as secteur, g.libelle as grade
+                SELECT c.nom_club, c.identif_club, c.representant, c.contact, s.nom_secteur as secteur, g.libelle as grade
                 FROM club c
                 LEFT JOIN secteur s ON c.List_sect = s.id_secteur
                 LEFT JOIN grade g ON c.grade = g.id_grade
@@ -70,16 +70,26 @@ def api_clubs():
             
             if saison_id:
                 query = """
-                    SELECT c.nom_club, c.identif_club, c.representant, s.nom_secteur as secteur, g.libelle as grade
+                    SELECT c.nom_club, c.identif_club, c.representant, c.contact, s.nom_secteur as secteur, 
+                           COALESCE(g.libelle, c.grade) as grade
                     FROM clubs_saison cs
                     JOIN club c ON cs.List_club = c.id_club
                     LEFT JOIN secteur s ON cs.List_sect = s.id_secteur
-                    LEFT JOIN grade g ON c.grade = g.id_grade
+                    LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
                     WHERE cs.List_saison = %s
+                    ORDER BY s.nom_secteur ASC, c.nom_club ASC
                 """
                 cursor.execute(query, (saison_id,))
             else:
-                query += " WHERE c.statut = 'actif'"
+                query = """
+                    SELECT c.nom_club, c.identif_club, c.representant, c.contact, s.nom_secteur as secteur, 
+                           COALESCE(g.libelle, c.grade) as grade
+                    FROM club c
+                    LEFT JOIN secteur s ON c.List_sect = s.id_secteur
+                    LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
+                    WHERE c.statut = 'actif'
+                    ORDER BY s.nom_secteur ASC, c.nom_club ASC
+                """
                 cursor.execute(query)
                 
             clubs = cursor.fetchall()
