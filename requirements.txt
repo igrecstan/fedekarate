@@ -1,2 +1,7 @@
-# Serveur web + API (formulaires, auth club, etc.)
+# Serveur web + API
 flask>=3.0.0
+mysql-connector-python
+pandas
+bcrypt
+python-dotenv
+openpyxl

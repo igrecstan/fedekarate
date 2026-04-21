@@ -255,6 +255,20 @@
     text-align: center;
 }
 
+.actions-cell {
+    white-space: nowrap !important;
+    min-width: 100px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
 .action-btn {
     background: none;
     border: none;
@@ -326,6 +340,32 @@
 
 .btn-primary:hover {
     background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-export {
+    background: #166534;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover {
+    background: #14532d;
     transform: translateY(-1px);
 }
 

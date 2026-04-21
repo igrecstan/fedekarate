@@ -1,6 +1,5 @@
 
 let allClubs = [];
-let filteredClubs = [];
 let currentPage = 1;
 let itemsPerPage = 20;
 let totalPages = 1;
@@ -37,31 +36,63 @@ async function loadSaisons() {
     }
 }
 
-// Charger les secteurs
-async function loadSecteurs() {
+// Charger les secteurs (filtrés par saison si une saison est sélectionnée)
+async function loadSecteurs(saisonId) {
     try {
-        const response = await fetch('/api/admin/secteurs');
+        let url = '/api/admin/secteurs';
+        if (saisonId) {
+            url = `/api/admin/secteurs/saison/${saisonId}`;
+        }
+        const response = await fetch(url);
         const data = await response.json();
         if (data.success) {
             const select = document.getElementById('secteurSelect');
+            const currentValue = select.value;
             select.innerHTML = '<option value="">Tous les secteurs</option>';
             data.secteurs.forEach(s => {
                 select.innerHTML += `<option value="${s.id_secteur}">${s.nom_secteur}</option>`;
             });
+            // Restaurer la valeur si elle existe encore dans la nouvelle liste
+            if (currentValue) {
+                const optionExists = Array.from(select.options).some(opt => opt.value === currentValue);
+                if (optionExists) {
+                    select.value = currentValue;
+                } else {
+                    select.value = '';
+                }
+            }
         }
     } catch (error) {
         console.error('Erreur chargement secteurs:', error);
     }
 }
 
-// Charger tous les clubs
-async function loadAllClubs() {
+// Charger les clubs depuis la route /api/admin/clubs-saison avec les filtres
+async function loadClubs() {
+    const saisonValue = document.getElementById('saisonSelect').value;
+    const secteurValue = document.getElementById('secteurSelect').value;
+
+    currentSaison = saisonValue;
+    currentSecteur = secteurValue;
+
+    // Afficher le loader pendant le chargement
+    const tbody = document.getElementById('clubsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr class="loader"><td colspan="8"><i class="fas fa-spinner"></i> Chargement des clubs...</td></tr>';
+    }
+
     try {
-        const response = await fetch('/api/admin/clubs/all');
+        // Construire l'URL avec les paramètres de filtre
+        const params = new URLSearchParams();
+        if (saisonValue) params.append('saison', saisonValue);
+        if (secteurValue) params.append('secteur', secteurValue);
+
+        const url = '/api/admin/clubs-saison' + (params.toString() ? '?' + params.toString() : '');
+        const response = await fetch(url);
         const data = await response.json();
+
         if (data.success) {
             allClubs = data.clubs || [];
-            applyFilterAndDisplay();
         } else {
             console.error('Erreur chargement clubs:', data.message);
             allClubs = [];
@@ -70,42 +101,8 @@ async function loadAllClubs() {
         console.error('Erreur:', error);
         allClubs = [];
     }
-}
 
-// Appliquer les filtres
-function applyFilterAndDisplay() {
-    const saisonValue = document.getElementById('saisonSelect').value;
-    const secteurValue = document.getElementById('secteurSelect').value;
-
-    currentSaison = saisonValue;
-    currentSecteur = secteurValue;
-
-    let result = [...allClubs];
-
-    // Filtre par saison
-    if (currentSaison) {
-        result = result.filter(club => {
-            return club.id_saison && club.id_saison.toString() === currentSaison;
-        });
-    }
-
-    // Filtre par secteur
-    if (currentSecteur) {
-        result = result.filter(club => {
-            return club.List_sect && club.List_sect.toString() === currentSecteur;
-        });
-    }
-
-    filteredClubs = result;
-
-    // Trier par date d'inscription décroissante
-    filteredClubs.sort((a, b) => {
-        const dateA = a.created_At ? new Date(a.created_At) : new Date(0);
-        const dateB = b.created_At ? new Date(b.created_At) : new Date(0);
-        return dateB - dateA;
-    });
-
-    totalPages = Math.ceil(filteredClubs.length / itemsPerPage);
+    totalPages = Math.ceil(allClubs.length / itemsPerPage);
     if (currentPage > totalPages) currentPage = 1;
     if (totalPages === 0) totalPages = 1;
 
@@ -134,7 +131,7 @@ function displayClubs() {
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const clubsToShow = filteredClubs.slice(startIndex, endIndex);
+    const clubsToShow = allClubs.slice(startIndex, endIndex);
 
     if (clubsToShow.length === 0) {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Aucun club trouvé avec les filtres sélectionnés</td></tr>';
@@ -168,7 +165,7 @@ function displayPagination() {
     const paginationDiv = document.getElementById('pagination');
     if (!paginationDiv) return;
 
-    if (totalPages <= 1 && filteredClubs.length <= itemsPerPage) {
+    if (totalPages <= 1 && allClubs.length <= itemsPerPage) {
         paginationDiv.innerHTML = '';
         return;
     }
@@ -177,7 +174,7 @@ function displayPagination() {
     html += `<button class="page-btn" onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
     html += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&lsaquo;</button>`;
     html += `<span class="page-info">Page ${currentPage} / ${totalPages}</span>`;
-    html += `<span class="page-count">(${filteredClubs.length} clubs)</span>`;
+    html += `<span class="page-count">(${allClubs.length} clubs)</span>`;
     html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>&rsaquo;</button>`;
     html += `<button class="page-btn" onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
     html += '</div>';
@@ -198,7 +195,7 @@ function updateTotalCount() {
         } else {
             filterText = 'toutes saisons et secteurs confondus';
         }
-        totalCountDiv.innerHTML = `<i class="fas fa-users"></i> Total : ${filteredClubs.length} club(s) ${filterText}`;
+        totalCountDiv.innerHTML = `<i class="fas fa-users"></i> Total : ${allClubs.length} club(s) ${filterText}`;
     }
 }
 
@@ -208,16 +205,26 @@ function changePage(page) {
     displayPagination();
 }
 
-function onFilterChange() {
+async function onSaisonChange() {
+    const saisonId = document.getElementById('saisonSelect').value;
+    // Recharger les secteurs filtrés par la saison sélectionnée
+    await loadSecteurs(saisonId || null);
     currentPage = 1;
-    applyFilterAndDisplay();
+    await loadClubs();
 }
 
-function resetFilters() {
+async function onSecteurChange() {
+    currentPage = 1;
+    await loadClubs();
+}
+
+async function resetFilters() {
     document.getElementById('saisonSelect').value = '';
     document.getElementById('secteurSelect').value = '';
+    // Recharger tous les secteurs
+    await loadSecteurs();
     currentPage = 1;
-    applyFilterAndDisplay();
+    await loadClubs();
 }
 
 function escapeHtml(text) {
@@ -231,15 +238,15 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadSaisons();
     await loadSecteurs();
-    await loadAllClubs();
+    await loadClubs();
 
     const saisonSelect = document.getElementById('saisonSelect');
     const secteurSelect = document.getElementById('secteurSelect');
 
     if (saisonSelect) {
-        saisonSelect.addEventListener('change', onFilterChange);
+        saisonSelect.addEventListener('change', onSaisonChange);
     }
     if (secteurSelect) {
-        secteurSelect.addEventListener('change', onFilterChange);
+        secteurSelect.addEventListener('change', onSecteurChange);
     }
 });

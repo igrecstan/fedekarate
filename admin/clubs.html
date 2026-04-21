@@ -32,9 +32,14 @@
                             <i class="fas fa-search"></i> Rechercher
                         </button>
                     </div>
-                    <button class="btn-primary" onclick="window.location.href='clubs-new.html'">
-                        <i class="fas fa-plus"></i> Nouveau Club
-                    </button>
+                    <div class="action-group">
+                        <button class="btn-export" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Exporter Excel
+                        </button>
+                        <button class="btn-primary" onclick="window.location.href='clubs-new.html'">
+                            <i class="fas fa-plus"></i> Nouveau Club
+                        </button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <div class="table-container">
@@ -196,6 +201,7 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="js/clubs.js"></script>
     <script src="js/admin.js"></script>
 

@@ -146,9 +146,17 @@ function applyFiltersAndDisplay() {
     // Appliquer les filtres de colonne
     let result = [...allClubs];
     
- // Filtre statut
+// Filtre secteur
+if (columnFilters.secteur) {
+    result = result.filter(club => club.secteur === columnFilters.secteur);
+}
+
+// Filtre statut
 if (columnFilters.statut) {
-    result = result.filter(club => club.statut === columnFilters.statut);
+    result = result.filter(club => {
+        const clubStatut = club.statut && club.statut.toLowerCase() === 'actif' ? 'actif' : 'inactif';
+        return clubStatut === columnFilters.statut.toLowerCase();
+    });
 }
     
     // Filtre nom
@@ -169,14 +177,6 @@ if (columnFilters.statut) {
     // Filtre contact
     if (columnFilters.contact) {
         result = result.filter(club => club.contact && club.contact.toLowerCase().includes(columnFilters.contact.toLowerCase()));
-    }
-    
-    // Filtre statut
-    if (columnFilters.statut) {
-        result = result.filter(club => {
-            const clubStatut = club.statut === 1 ? 'Actif' : 'Inactif';
-            return clubStatut === columnFilters.statut;
-        });
     }
     
     // Filtre recherche globale
@@ -426,19 +426,22 @@ function displayClubs() {
         const orderNumber = startNumber + index;
         row.className = 'club-row';
         row.innerHTML = `
-            <td><span class="row-number">${orderNumber}</span><\/td>
-            <td><span class="cell-text">${escapeHtml(club.secteur || '-')}</span><\/td>
-            <td><span class="cell-text club-name">${escapeHtml(club.nom_club || '-')}</span><\/td>
-            <td><span class="cell-text">${escapeHtml(club.identif_club || '-')}</span><\/td>
-            <td><span class="cell-text">${escapeHtml(club.representant || '-')}</span><\/td>
-            <td><span class="cell-text">${escapeHtml(club.contact || '-')}</span><\/td>
-            <td><span class="badge-sm ${club.statut === 'actif' ? 'badge-active' : 'badge-inactive'}">${club.statut === 'actif' ? 'Actif' : 'Inactif'}<\/span><\/td>
-                <button class="action-btn edit-btn-sm" onclick="editClub(${club.id_club})" title="Modifier">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="action-btn delete-btn-sm" onclick="confirmDeleteClub(${club.id_club}, '${escapeHtml(club.nom_club)}')" title="Supprimer">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+            <td><span class="row-number">${orderNumber}</span></td>
+            <td><span class="cell-text">${escapeHtml(club.secteur || '-')}</span></td>
+            <td><span class="cell-text club-name">${escapeHtml(club.nom_club || '-')}</span></td>
+            <td><span class="cell-text">${escapeHtml(club.identif_club || '-')}</span></td>
+            <td><span class="cell-text">${escapeHtml(club.representant || '-')}</span></td>
+            <td><span class="cell-text">${escapeHtml(club.contact || '-')}</span></td>
+            <td><span class="badge-sm ${club.statut === 'actif' ? 'badge-active' : 'badge-inactive'}">${club.statut === 'actif' ? 'Actif' : 'Inactif'}</span></td>
+            <td class="actions-cell">
+                <div class="action-buttons">
+                    <button class="action-btn edit-btn-sm" onclick="editClub(${club.id_club})" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn delete-btn-sm" onclick="confirmDeleteClub(${club.id_club}, '${escapeHtml(club.nom_club)}')" title="Supprimer">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </td>
         `;
     });
@@ -676,4 +679,36 @@ window.onclick = function (event) {
     if (event.target === deleteModal) {
         closeDeleteModal();
     }
+}
+
+// Export Excel
+function exportToExcel() {
+    if (!filteredClubs || filteredClubs.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+
+    // Préparer les données pour l'export
+    const dataToExport = filteredClubs.map((club, index) => ({
+        'N°': index + 1,
+        'Secteur': club.secteur || '-',
+        'Nom du Club': club.nom_club || '-',
+        'Identifiant': club.identif_club || '-',
+        'Représentant': club.representant || '-',
+        'Contact': club.contact || '-',
+        'Grade': club.grade || '-',
+        'Email': club.email || '-',
+        'Statut': club.statut === 'actif' ? 'Actif' : 'Inactif'
+    }));
+
+    // Créer un classeur Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "Clubs");
+
+    // Générer le fichier et déclencher le téléchargement
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Liste_Clubs_${date}.xlsx`);
 }
