@@ -253,12 +253,7 @@
                                         <option value="">Sélectionner un club</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label>Saison</label>
-                                    <select id="id_saison">
-                                        <option value="">Sélectionner une saison</option>
-                                    </select>
-                                </div>
+
                                 <div class="form-group">
                                     <label>Grade</label>
                                     <select id="grade">
@@ -297,13 +292,7 @@
                                     <label>Email</label>
                                     <input type="email" id="email" placeholder="email@exemple.com">
                                 </div>
-                                <div class="form-group">
-                                    <label>Statut</label>
-                                    <select id="statut">
-                                        <option value="actif">Actif</option>
-                                        <option value="inactif">Inactif</option>
-                                    </select>
-                                </div>
+
                                 <div class="form-group">
                                     <label>ASSURÉ</label>
                                     <div style="display: flex; gap: 20px; padding: 10px 0;">
@@ -312,6 +301,17 @@
                                         </label>
                                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
                                             <input type="radio" name="assure" value="0" checked style="width: auto;"> NON
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>PASSEPORT ÉTABLI</label>
+                                    <div style="display: flex; gap: 20px; padding: 10px 0;">
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                                            <input type="radio" name="passeport_etabli" value="1" style="width: auto;"> OUI
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                                            <input type="radio" name="passeport_etabli" value="0" checked style="width: auto;"> NON
                                         </label>
                                     </div>
                                 </div>

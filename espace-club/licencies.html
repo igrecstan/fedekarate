@@ -16,11 +16,12 @@
         .page-header p { color: #666; }
         .btn-add { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer; margin-bottom: 1.5rem; font-weight: 500; }
         .btn-add:hover { transform: translateY(-2px); }
-        .licencies-table { background: white; border-radius: 20px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8f9fa; font-weight: 600; color: #1e1e2a; }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        .licencies-table { background: white; border-radius: 20px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 0.75rem; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 0.5rem 0.8rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8f9fa; font-weight: 600; color: #1e1e2a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-row th { background: #fff; padding: 0.3rem 0.8rem; border-bottom: 2px solid #667eea; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 500; display: inline-block; }
         .status-actif { background: #d1fae5; color: #059669; }
         .status-inactif { background: #fee2e2; color: #dc2626; }
         .action-icons i { margin: 0 0.25rem; cursor: pointer; }
@@ -52,35 +53,122 @@
         <div id="sidebar-container"></div>
         <main class="main-content">
             <div class="page-header">
-                <h1>Licenciés</h1>
-                <p>Gérez les licenciés de votre club</p>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h1>Liste des Athlètes</h1>
+                        <p>Retrouvez tous les athlètes enregistrés pour votre club. Cliquez sur <b>+</b> pour affilier un ancien ou sur <b>Nouveau</b> pour un nouveau membre.</p>
+                    </div>
+                    <button class="btn-add" onclick="openModal()" style="background: #3AAA35; color: white; border: none; padding: 0.7rem 1.2rem; border-radius: 12px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-plus"></i> Nouveau Licencié
+                    </button>
+                </div>
             </div>
-            <button class="btn-add" id="addLicencieBtn"><i class="fas fa-user-plus"></i> Nouveau licencié</button>
             <div class="licencies-table">
                 <table>
                     <thead>
-                        <tr><th>N° Licence</th><th>Nom complet</th><th>Grade</th><th>Date naissance</th><th>Statut</th><th>Actions</th></tr>
+                        <tr><th>N° Licence</th><th>Nom complet</th><th>Grade</th><th>Date Naiss.</th><th>Contact</th><th>Saison Actuelle</th><th>Actions</th></tr>
+                        <tr class="filter-row">
+                            <th><input type="text" id="filter-licence" placeholder="Filtrer..." style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;"></th>
+                            <th><input type="text" id="filter-nom" placeholder="Filtrer..." style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;"></th>
+                            <th><input type="text" id="filter-grade" placeholder="Filtrer..." style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;"></th>
+                            <th><input type="text" id="filter-date" placeholder="Filtrer..." style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;"></th>
+                            <th><input type="text" id="filter-contact" placeholder="Filtrer..." style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;"></th>
+                            <th>
+                                <select id="filter-statut" style="width: 100%; font-size: 0.7rem; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="">Tous</option>
+                                    <option value="affilie">Affiliés</option>
+                                    <option value="non-affilie">Non-affiliés</option>
+                                </select>
+                            </th>
+                            <th></th>
+                        </tr>
                     </thead>
                     <tbody id="licenciesTableBody">
-                        <tr><td colspan="6" style="text-align: center;">Chargement...</td></tr>
+                        <tr><td colspan="7" style="text-align: center;">Chargement...</td></tr>
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <div id="licencieModal" class="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle">Ajouter un licencié</h3>
+    <!-- Modal Nouveau Licencié -->
+    <div id="licencieModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:white; border-radius:24px; padding:2rem; width:95%; max-width:800px; max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; background: white; padding-bottom: 1rem; border-bottom: 2px solid #f0f2f5;">
+                <h2 style="color:#1e1e2a; font-size:1.25rem;"><i class="fas fa-user-plus"></i> Nouveau Licencié</h2>
+                <i class="fas fa-times" onclick="closeModal()" style="cursor:pointer; color:#666; font-size: 1.5rem;"></i>
+            </div>
             <form id="licencieForm">
-                <input type="hidden" id="licencieId">
-                <div class="form-group"><label>Numéro de licence</label><input type="text" id="numLicence" required></div>
-                <div class="form-group"><label>Nom</label><input type="text" id="nom" required></div>
-                <div class="form-group"><label>Prénom</label><input type="text" id="prenom" required></div>
-                <div class="form-group"><label>Date de naissance</label><input type="date" id="dateNaissance" required></div>
-                <div class="form-group"><label>Grade</label><input type="text" id="grade" placeholder="Ex: 1er DAN, 2ème KYU"></div>
-                <div class="form-group"><label>Statut</label><select id="statut"><option value="actif">Actif</option><option value="inactif">Inactif</option></select></div>
-                <div class="modal-buttons"><button type="submit" class="btn-submit">Enregistrer</button><button type="button" class="btn-cancel" onclick="closeModal()">Annuler</button></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem;">
+                    <!-- Colonne 1 -->
+                    <div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Nom et Prénoms <span style="color:red;">*</span></label>
+                            <input type="text" id="nom_prenoms" required placeholder="NOM ET PRÉNOMS" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Genre <span style="color:red;">*</span></label>
+                                <select id="genre" required style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                                    <option value="M">Masculin</option>
+                                    <option value="F">Féminin</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Date Naissance <span style="color:red;">*</span></label>
+                                <input type="date" id="date_naissance" required style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                            </div>
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Lieu de Naissance</label>
+                            <input type="text" id="lieu_nais" placeholder="Lieu de naissance" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Nationalité</label>
+                            <input type="text" id="nation" placeholder="Nationalité" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Grade <span style="color:red;">*</span></label>
+                            <select id="list_grade" required style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                                <!-- Dynamique -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Colonne 2 -->
+                    <div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Profession</label>
+                            <input type="text" id="prof_ath" placeholder="Profession de l'athlète" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Contact Athlète</label>
+                            <input type="tel" id="contact" placeholder="01xxxxxxxx" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; font-weight:600;">Email</label>
+                            <input type="email" id="email" placeholder="email@exemple.com" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:12px;">
+                        </div>
+                        <div style="border-top:1px solid #eee; padding-top:1rem; margin-top:1rem;">
+                            <h3 style="font-size:0.9rem; color:#667eea; margin-bottom:0.8rem;"><i class="fas fa-phone-alt"></i> Urgence (Parent)</h3>
+                            <div style="margin-bottom:0.8rem;">
+                                <label style="display:block; margin-bottom:0.3rem; font-size:0.8rem; font-weight:600;">Nom Parent</label>
+                                <input type="text" id="person_prevenir" placeholder="Nom complet" style="width:100%; padding:0.6rem; border:2px solid #e2e8f0; border-radius:10px;">
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.3rem; font-size:0.8rem; font-weight:600;">Contact Parent</label>
+                                <input type="tel" id="tel_person" placeholder="01xxxxxxxx" style="width:100%; padding:0.6rem; border:2px solid #e2e8f0; border-radius:10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:1rem; margin-top:2rem; padding-top: 1rem; border-top: 1px solid #f0f2f5;">
+                    <button type="submit" style="flex:1; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; padding:1rem; border-radius:12px; font-weight:600; cursor:pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                        <i class="fas fa-save"></i> Enregistrer le Licencié
+                    </button>
+                    <button type="button" onclick="closeModal()" style="flex:0.5; background:#f0f2f5; color:#4a5568; border:none; padding:1rem; border-radius:12px; font-weight:600; cursor:pointer;">Annuler</button>
+                </div>
             </form>
         </div>
     </div>
@@ -95,89 +183,162 @@
         setTimeout(setupMobile,100);
         
         let currentClubId = sessionStorage.getItem('clubId');
-        const modal = document.getElementById('licencieModal');
+        let allAthletes = [];
         
-        function loadLicencies() {
-            fetch(`/api/club/${currentClubId}/licencies`)
-                .then(res=>res.json())
-                .then(data=>{
-                    if(data.success){
-                        const tbody=document.getElementById('licenciesTableBody');
-                        if(data.licencies.length===0){
-                            tbody.innerHTML='<tr><td colspan="6" style="text-align: center;">Aucun licencié</td></tr>';
-                        } else {
-                            tbody.innerHTML=data.licencies.map(l=>`
-                                <tr>
-                                    <td>${l.num_licence || '-'}</td>
-                                    <td>${l.nom || ''} ${l.prenom || ''}</td>
-                                    <td>${l.grade || '-'}</td>
-                                    <td>${l.date_naissance || '-'}</td>
-                                    <td><span class="status-badge status-${l.statut || 'actif'}">${l.statut || 'actif'}</span></td>
-                                    <td class="action-icons">
-                                        <i class="fas fa-edit" onclick="editLicencie(${l.id_licencie})"></i>
-                                        <i class="fas fa-trash" onclick="deleteLicencie(${l.id_licencie})"></i>
-                                    </td>
-                                </tr>
-                            `).join('');
-                        }
-                    } else {
-                        document.getElementById('licenciesTableBody').innerHTML='<tr><td colspan="6" style="text-align: center;">Erreur de chargement</td></tr>';
-                    }
-                })
-                .catch(()=>{ document.getElementById('licenciesTableBody').innerHTML='<tr><td colspan="6" style="text-align: center;">Erreur de connexion</td></tr>'; });
-        }
-        
-        function openModal(licencie=null){
-            document.getElementById('modalTitle').textContent=licencie?'Modifier le licencié':'Ajouter un licencié';
-            document.getElementById('licencieId').value=licencie?.id_licencie||'';
-            document.getElementById('numLicence').value=licencie?.num_licence||'';
-            document.getElementById('nom').value=licencie?.nom||'';
-            document.getElementById('prenom').value=licencie?.prenom||'';
-            document.getElementById('dateNaissance').value=licencie?.date_naissance||'';
-            document.getElementById('grade').value=licencie?.grade||'';
-            document.getElementById('statut').value=licencie?.statut||'actif';
-            modal.style.display='flex';
-        }
-        
-        function closeModal(){ modal.style.display='none'; }
-        
-        function editLicencie(id){
-            fetch(`/api/club/${currentClubId}/licencies`)
-                .then(res=>res.json())
-                .then(data=>{
-                    const licencie=data.licencies.find(l=>l.id_licencie===id);
-                    if(licencie) openModal(licencie);
-                });
-        }
-        
-        function deleteLicencie(id){
-            if(confirm('Supprimer ce licencié ?')){
-                fetch(`/api/club/${currentClubId}/licencie/${id}`,{method:'DELETE'})
-                    .then(res=>res.json())
-                    .then(data=>{ if(data.success) loadLicencies(); else alert(data.message); });
+        async function loadLicencies() {
+            try {
+                const response = await fetch(`/api/club/${currentClubId}/licencies`);
+                const data = await response.json();
+                
+                if(data.success){
+                    allAthletes = data.licencies;
+                    displayFilteredLicencies(data.current_year);
+                } else {
+                    document.getElementById('licenciesTableBody').innerHTML='<tr><td colspan="7" style="text-align: center;">Erreur de chargement</td></tr>';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('licenciesTableBody').innerHTML='<tr><td colspan="7" style="text-align: center;">Erreur de connexion</td></tr>';
             }
         }
-        
-        document.getElementById('licencieForm').addEventListener('submit', async(e)=>{
-            e.preventDefault();
-            const id=document.getElementById('licencieId').value;
-            const data={
-                num_licence: document.getElementById('numLicence').value,
-                nom: document.getElementById('nom').value,
-                prenom: document.getElementById('prenom').value,
-                date_naissance: document.getElementById('dateNaissance').value,
-                grade: document.getElementById('grade').value,
-                statut: document.getElementById('statut').value
+
+        function displayFilteredLicencies(currentYear = 2026) {
+            const filters = {
+                licence: document.getElementById('filter-licence').value.toLowerCase(),
+                nom: document.getElementById('filter-nom').value.toLowerCase(),
+                grade: document.getElementById('filter-grade').value.toLowerCase(),
+                date: document.getElementById('filter-date').value.toLowerCase(),
+                contact: document.getElementById('filter-contact').value.toLowerCase(),
+                statut: document.getElementById('filter-statut').value
             };
-            const url=id?`/api/club/${currentClubId}/licencie/${id}`:`/api/club/${currentClubId}/licencie`;
-            const method=id?'PUT':'POST';
-            const response=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-            const result=await response.json();
-            if(result.success){ closeModal(); loadLicencies(); }
-            else alert(result.message);
+
+            const filtered = allAthletes.filter(l => {
+                const matchesLicence = (l.num_licence || '').toLowerCase().includes(filters.licence);
+                const fullName = `${l.nom || ''} ${l.prenom || ''}`.toLowerCase();
+                const matchesNom = fullName.includes(filters.nom);
+                const matchesGrade = (l.grade || '').toLowerCase().includes(filters.grade);
+                const matchesDate = (l.date_naissance || '').toLowerCase().includes(filters.date);
+                const matchesContact = (l.contact || '').toLowerCase().includes(filters.contact);
+                
+                let matchesStatut = true;
+                if (filters.statut === 'affilie') matchesStatut = (l.est_affilie > 0);
+                if (filters.statut === 'non-affilie') matchesStatut = (l.est_affilie === 0);
+
+                return matchesLicence && matchesNom && matchesGrade && matchesDate && matchesContact && matchesStatut;
+            });
+
+            const tbody = document.getElementById('licenciesTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Aucun athlète ne correspond aux filtres</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(l => `
+                <tr>
+                    <td style="font-weight: 600; color: #667eea;">${l.num_licence || '-'}</td>
+                    <td style="font-weight: 500;">${l.nom || ''} ${l.prenom || ''}</td>
+                    <td>${l.grade || '-'}</td>
+                    <td>${l.date_naissance || '-'}</td>
+                    <td>${l.contact || '-'}</td>
+                    <td>
+                        ${l.est_affilie > 0 
+                            ? '<span class="status-badge status-actif"><i class="fas fa-check"></i> Affilié</span>' 
+                            : '<span class="status-badge status-inactif">Non affilié</span>'}
+                    </td>
+                    <td class="action-icons">
+                        ${l.est_affilie === 0 
+                            ? `<i class="fas fa-plus-circle" style="color: #4BCF27; font-size: 1.2rem;" title="Affilier" onclick="affilierLicencie(${l.id_licencie})"></i>` 
+                            : '<i class="fas fa-check-circle" style="color: #667eea; opacity: 0.5; cursor: default;"></i>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Ajouter les écouteurs pour les filtres
+        ['filter-licence', 'filter-nom', 'filter-grade', 'filter-date', 'filter-contact', 'filter-statut'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => displayFilteredLicencies());
+            }
         });
         
-        document.getElementById('addLicencieBtn').onclick=()=>openModal();
+        async function affilierLicencie(id){
+            if(!confirm('Voulez-vous affilier cet athlète pour la saison en cours ?')) return;
+            
+            try {
+                const response = await fetch(`/api/club/${currentClubId}/licencies/${id}/affilier`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if(data.success){
+                    alert('Affiliation réussie !');
+                    loadLicencies();
+                } else {
+                    alert(data.message || 'Erreur lors de l\'affiliation');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur de connexion');
+            }
+        }
+
+        function openModal() {
+            document.getElementById('licencieModal').style.display = 'flex';
+            loadGrades();
+        }
+
+        function closeModal() {
+            document.getElementById('licencieModal').style.display = 'none';
+        }
+
+        async function loadGrades() {
+            try {
+                const response = await fetch('/api/club/grades');
+                const data = await response.json();
+                if(data.success) {
+                    const select = document.getElementById('list_grade');
+                    select.innerHTML = data.grades.map(g => `<option value="${g.id_grade}">${g.libelle}</option>`).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        document.getElementById('licencieForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                nom_prenoms: document.getElementById('nom_prenoms').value.toUpperCase(),
+                genre: document.getElementById('genre').value,
+                date_naissance: document.getElementById('date_naissance').value,
+                lieu_nais: document.getElementById('lieu_nais').value.toUpperCase(),
+                nation: document.getElementById('nation').value.toUpperCase(),
+                list_grade: document.getElementById('list_grade').value,
+                prof_ath: document.getElementById('prof_ath').value.toUpperCase(),
+                contact: document.getElementById('contact').value.replace(/\s+/g, ''),
+                email: document.getElementById('email').value,
+                assure: 1,
+                passeport_etabli: 0,
+                person_prevenir: document.getElementById('person_prevenir').value.toUpperCase(),
+                tel_person: document.getElementById('tel_person').value.replace(/\s+/g, '')
+            };
+
+            try {
+                const response = await fetch(`/api/club/${currentClubId}/licencie`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if(result.success) {
+                    alert('Nouveau licencié créé et affilié !');
+                    closeModal();
+                    loadLicencies();
+                } else {
+                    alert(result.message);
+                }
+            } catch (e) { alert('Erreur de connexion'); }
+        });
+        
         loadLicencies();
     </script>
 </body>

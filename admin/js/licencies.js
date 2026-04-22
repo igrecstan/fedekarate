@@ -632,6 +632,12 @@ async function checkAndLoadEditData() {
                 const radio = document.querySelector(`input[name="assure"][value="${assureVal}"]`);
                 if (radio) radio.checked = true;
             }
+            // Gérer les boutons radio PASSEPORT_ETABLI
+            if (l.passeport_etabli !== undefined) {
+                const passeportVal = l.passeport_etabli ? "1" : "0";
+                const radio = document.querySelector(`input[name="passeport_etabli"][value="${passeportVal}"]`);
+                if (radio) radio.checked = true;
+            }
             // Remplir les champs de texte additionnels
             const textFields = {
                 'lieu_nais': l.lieu_nais,
@@ -702,8 +708,13 @@ async function saveLicencie(e) {
         email: getVal('email'),
         person_prevenir: getVal('person_prevenir'),
         tel_person: getVal('tel_person'),
-        assure: document.querySelector('input[name="assure"]:checked')?.value || 0
+        assure: document.querySelector('input[name="assure"]:checked')?.value || 0,
+        passeport_etabli: document.querySelector('input[name="passeport_etabli"]:checked')?.value || 0
     };
+
+    // Nettoyer les contacts (supprimer les espaces)
+    formData.contact = formData.contact.replace(/\s+/g, '');
+    formData.tel_person = formData.tel_person.replace(/\s+/g, '');
 
     // Validation des contacts
     if (formData.contact && !validateContact(formData.contact)) {

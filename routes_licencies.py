@@ -185,9 +185,9 @@ def create_licencie():
             INSERT INTO athletes (
                 nom_prenoms, tel_ath, mail_ath, date_nais, 
                 list_club, list_grade, num_ath, statut,
-                genre, lieu_nais, nation, prof_ath, person_prevenir, tel_person,
+                genre, lieu_nais, nation, prof_ath, person_prevenir, tel_person, passeport_etabli,
                 created_at, update_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
         """
         cursor.execute(insert_query, (
             data.get('nom_prenoms', '').strip().upper(),
@@ -204,6 +204,7 @@ def create_licencie():
             data.get('prof_ath', '').strip().upper(),
             data.get('person_prevenir', '').strip().upper(),
             data.get('tel_person', '').strip().upper(),
+            int(data.get('passeport_etabli', 0))
         ))
         
         new_id = cursor.lastrowid
@@ -256,9 +257,9 @@ def update_licencie(id):
         update_query = """
             UPDATE athletes 
             SET nom_prenoms = %s, tel_ath = %s, mail_ath = %s, 
-                date_nais = %s, list_club = %s, list_grade = %s, statut = %s,
+                date_nais = %s, list_club = %s, list_grade = %s,
                 genre = %s, lieu_nais = %s, nation = %s, prof_ath = %s, 
-                person_prevenir = %s, tel_person = %s,
+                person_prevenir = %s, tel_person = %s, passeport_etabli = %s,
                 update_at = NOW()
             WHERE id_ath = %s
         """
@@ -271,13 +272,13 @@ def update_licencie(id):
             data.get('date_naissance') or None,
             data.get('id_club'),
             data.get('list_grade'),
-            data.get('statut', 'actif'),
             data.get('genre'),
             data.get('lieu_nais', '').strip().upper(),
             data.get('nation', '').strip().upper(),
             data.get('prof_ath', '').strip().upper(),
             data.get('person_prevenir', '').strip().upper(),
             data.get('tel_person', '').strip().upper(),
+            int(data.get('passeport_etabli', 0)),
             id
         ))
         
