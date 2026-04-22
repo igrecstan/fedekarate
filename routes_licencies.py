@@ -139,7 +139,8 @@ def update_licencie(id):
         update_query = """
             UPDATE athletes 
             SET nom_prenoms = %s, tel_ath = %s, mail_ath = %s, 
-                date_nais = %s, list_club = %s, list_grade = %s, statut = %s
+                date_nais = %s, list_club = %s, list_grade = %s, statut = %s,
+                update_at = NOW()
             WHERE id_ath = %s
         """
         full_name = data.get('nom_prenoms', '').strip()
@@ -156,19 +157,20 @@ def update_licencie(id):
         
         # 2. Mettre à jour ou insérer dans athletes_saison
         if data.get('id_saison'):
+            assure_val = int(data.get('assure', 0))
             cursor.execute("SELECT id_athsaison FROM athletes_saison WHERE list_ath = %s AND list_saison = %s", (id, data['id_saison']))
             exists = cursor.fetchone()
             if exists:
                 cursor.execute("""
                     UPDATE athletes_saison 
-                    SET list_club = %s, list_grade = %s, assure = %s
+                    SET list_club = %s, list_grade = %s, assure = %s, update_at = NOW()
                     WHERE list_ath = %s AND list_saison = %s
-                """, (data['id_club'], data['list_grade'], data.get('assure', 0), id, data['id_saison']))
+                """, (data['id_club'], data['list_grade'], assure_val, id, data['id_saison']))
             else:
                 cursor.execute("""
-                    INSERT INTO athletes_saison (list_ath, list_saison, list_club, list_grade, assure)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (id, data['id_saison'], data['id_club'], data['list_grade'], data.get('assure', 0)))
+                    INSERT INTO athletes_saison (list_ath, list_saison, list_club, list_grade, assure, created_at, update_at)
+                    VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                """, (id, data['id_saison'], data['id_club'], data['list_grade'], assure_val))
         
         conn.commit()
         return jsonify({'success': True, 'message': 'Licencié mis à jour'})
@@ -197,12 +199,23 @@ def get_grades():
 
 @licencies_bp.route('/saisons/licencies', methods=['GET'])
 def get_saisons_licencies():
+    exclude_ath = request.args.get('exclude_athlete_id', type=int)
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM saison ORDER BY id_saison DESC")
+        if exclude_ath:
+            query = """
+                SELECT * FROM saison 
+                WHERE id_saison NOT IN (
+                    SELECT list_saison FROM athletes_saison WHERE list_ath = %s
+                )
+                ORDER BY id_saison DESC
+            """
+            cursor.execute(query, (exclude_ath,))
+        else:
+            cursor.execute("SELECT * FROM saison ORDER BY id_saison DESC")
         saisons = cursor.fetchall()
         return jsonify({'success': True, 'saisons': saisons})
     except Exception as e:

@@ -36,19 +36,24 @@ def update_activity_statuses(conn):
             cursor.close()
             return
             
-        saison_ids = tuple(s[0] for s in saisons)
-        if len(saison_ids) == 1:
-            ids_str = f"({saison_ids[0]})"
-        else:
-            ids_str = str(saison_ids)
+        saison_ids = [s[0] for s in saisons]
+        ids_str = ",".join(map(str, saison_ids))
             
-        # Update Clubs
-        cursor.execute(f"UPDATE club SET statut = 'inactif' WHERE id_club NOT IN (SELECT List_club FROM clubs_saison WHERE List_saison IN {ids_str})")
-        cursor.execute(f"UPDATE club SET statut = 'actif' WHERE id_club IN (SELECT List_club FROM clubs_saison WHERE List_saison IN {ids_str})")
+        # Update Clubs - Utilisation d'une requête plus performante
+        cursor.execute(f"""
+            UPDATE club c
+            LEFT JOIN (SELECT DISTINCT List_club FROM clubs_saison WHERE List_saison IN ({ids_str})) active 
+            ON c.id_club = active.List_club
+            SET c.statut = IF(active.List_club IS NULL, 'inactif', 'actif')
+        """)
         
         # Update Athletes (Licenciés)
-        cursor.execute(f"UPDATE athletes SET statut = 'inactif' WHERE id_ath NOT IN (SELECT list_ath FROM athletes_saison WHERE list_saison IN {ids_str})")
-        cursor.execute(f"UPDATE athletes SET statut = 'actif' WHERE id_ath IN (SELECT list_ath FROM athletes_saison WHERE list_saison IN {ids_str})")
+        cursor.execute(f"""
+            UPDATE athletes a
+            LEFT JOIN (SELECT DISTINCT list_ath FROM athletes_saison WHERE list_saison IN ({ids_str})) active 
+            ON a.id_ath = active.list_ath
+            SET a.statut = IF(active.list_ath IS NULL, 'inactif', 'actif')
+        """)
             
         conn.commit()
         cursor.close()

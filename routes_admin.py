@@ -177,10 +177,9 @@ def get_all_clubs():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         query = """
-            SELECT c.*, s.nom_secteur as secteur, COALESCE(g.libelle, c.grade) as grade_name
+            SELECT c.*, s.nom_secteur as secteur
             FROM club c 
             LEFT JOIN secteur s ON c.List_sect = s.id_secteur 
-            LEFT JOIN grade g ON (c.grade REGEXP '^[0-9]+$') AND (c.grade = g.id_grade)
             ORDER BY s.nom_secteur ASC, c.nom_club ASC
         """
         cursor.execute(query)

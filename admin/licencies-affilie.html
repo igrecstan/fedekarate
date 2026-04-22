@@ -242,8 +242,8 @@
                                     <input type="text" id="nom_prenoms" placeholder="NOM ET PRENOMS" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Secteur</label>
-                                    <select id="id_secteur">
+                                    <label class="required">Secteur</label>
+                                    <select id="id_secteur" required>
                                         <option value="">Sélectionner un secteur</option>
                                     </select>
                                 </div>
@@ -254,8 +254,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Saison</label>
-                                    <select id="id_saison">
+                                    <label class="required">Saison</label>
+                                    <select id="id_saison" required>
                                         <option value="">Sélectionner une saison</option>
                                     </select>
                                 </div>
@@ -266,9 +266,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="required">Contact</label>
-                                    <input type="tel" id="contact" placeholder="01XXXXXXXX ou 05XXXXXXXX ou 07XXXXXXXX"
-                                        required>
+                                    <label>Contact</label>
+                                    <input type="tel" id="contact" placeholder="01XXXXXXXX ou 05XXXXXXXX ou 07XXXXXXXX">
                                     <span class="error-message" id="contactError" style="display: none;">Le numéro doit
                                         commencer par 01, 05 ou 07 et contenir 10 chiffres</span>
                                 </div>
@@ -285,17 +284,21 @@
                                     <input type="text" id="adresse" placeholder="Adresse complète">
                                 </div>
                                 <div class="form-group">
-                                    <label>Statut</label>
-                                    <select id="statut">
-                                        <option value="actif">Actif</option>
-                                        <option value="inactif">Inactif</option>
-                                    </select>
+                                    <label>ASSURÉ</label>
+                                    <div style="display: flex; gap: 20px; padding: 10px 0;">
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                                            <input type="radio" name="assure" value="1" style="width: auto;"> OUI
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                                            <input type="radio" name="assure" value="0" checked style="width: auto;"> NON
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-actions">
                                 <button type="button" class="btn-cancel"
                                     onclick="window.location.href='licencies-club.html'">Annuler</button>
-                                <button type="submit" class="btn-submit">Mettre à jour</button>
+                                <button type="submit" class="btn-submit">Affilier</button>
                             </div>
                         </form>
                     </div>

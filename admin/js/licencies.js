@@ -145,7 +145,16 @@ function updateClubSelect() {
 // Charger les saisons pour les licenciés
 async function loadSaisons() {
     try {
-        const response = await fetch('/api/admin/saisons/licencies');
+        const urlParams = new URLSearchParams(window.location.search);
+        const licencieId = urlParams.get('id');
+        let url = '/api/admin/saisons/licencies';
+        
+        // Si on est sur la page d'affiliation, on exclut les saisons déjà prises
+        if (window.location.pathname.includes('licencies-affilie.html') && licencieId) {
+            url += `?exclude_athlete_id=${licencieId}`;
+        }
+        
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (data.success && data.saisons) {
@@ -567,6 +576,13 @@ async function checkAndLoadEditData() {
                 const el = document.getElementById(id);
                 if (el && val) el.value = val.toString();
             }
+
+            // Gérer les boutons radio ASSURE
+            if (l.assure !== undefined) {
+                const assureVal = l.assure ? "1" : "0";
+                const radio = document.querySelector(`input[name="assure"][value="${assureVal}"]`);
+                if (radio) radio.checked = true;
+            }
         } else {
             showNotification('Licencié non trouvé', 'error');
         }
@@ -583,17 +599,33 @@ async function saveLicencie(e) {
     const urlParams = new URLSearchParams(window.location.search);
     const licencieId = urlParams.get('id');
 
+    if (!licencieId) {
+        showNotification('ID du licencié manquant', 'error');
+        return;
+    }
+
+    // Récupération sécurisée des valeurs
+    const getVal = (id) => document.getElementById(id)?.value || '';
+    
     const formData = {
-        nom_prenoms: document.getElementById('nom_prenoms').value,
-        id_club: document.getElementById('id_club').value,
-        id_saison: document.getElementById('id_saison').value,
-        list_grade: document.getElementById('grade').value,
-        contact: document.getElementById('contact').value,
-        email: document.getElementById('email').value,
-        date_naissance: document.getElementById('date_naissance').value,
-        adresse: document.getElementById('adresse').value,
-        statut: document.getElementById('statut').value
+        nom_prenoms: getVal('nom_prenoms'),
+        id_club: getVal('id_club'),
+        id_saison: getVal('id_saison'),
+        list_grade: getVal('grade'),
+        contact: getVal('contact'),
+        email: getVal('email'),
+        date_naissance: getVal('date_naissance') || null,
+        adresse: getVal('adresse'),
+        assure: document.querySelector('input[name="assure"]:checked')?.value || 0
     };
+
+    console.log('Tentative d\'affiliation avec données:', formData);
+
+    // Validation minimale
+    if (!formData.id_club || !formData.id_saison) {
+        showNotification('Le club et la saison sont obligatoires pour l\'affiliation', 'error');
+        return;
+    }
 
     showLoading(true);
     try {
@@ -602,16 +634,22 @@ async function saveLicencie(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
+        
         const data = await response.json();
+        console.log('Réponse du serveur:', data);
+
         if (data.success) {
-            showNotification('Licencié mis à jour avec succès', 'success');
-            setTimeout(() => window.location.href = 'licencies-club.html', 1500);
+            showNotification('Affiliation réussie !', 'success');
+            // Redirection après un court délai
+            setTimeout(() => {
+                window.location.href = 'licencies-club.html';
+            }, 1500);
         } else {
-            showNotification('Erreur: ' + (data.message || 'Mise à jour impossible'), 'error');
+            showNotification('Erreur serveur: ' + (data.message || 'Échec de l\'affiliation'), 'error');
         }
     } catch (error) {
-        console.error('Erreur sauvegarde:', error);
-        showNotification('Erreur lors de la sauvegarde', 'error');
+        console.error('Erreur lors de l\'appel API:', error);
+        showNotification('Erreur de connexion au serveur', 'error');
     } finally {
         showLoading(false);
     }
