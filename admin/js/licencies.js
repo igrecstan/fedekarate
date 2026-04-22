@@ -17,6 +17,7 @@ let deleteId = null;
 let secteursList = [];
 let clubsList = [];
 let saisonsList = [];
+let gradesList = [];
 
 // Fonction pour vérifier l'authentification
 function checkLicenciesAuth() {
@@ -82,12 +83,18 @@ function extractNomPrenom(nomPrenoms) {
 // Charger les secteurs
 async function loadSecteurs() {
     try {
-        const response = await fetch('/api/admin/secteurs');
+        const isNewOrAffilie = window.location.pathname.includes('licencies-new.html') || window.location.pathname.includes('licencies-affilie.html');
+        let url = '/api/admin/secteurs';
+        if (isNewOrAffilie) {
+            url += '?saison_id=5'; // Saison 2026 par défaut
+        }
+
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (data.success) {
             secteursList = data.secteurs || [];
-            
+
             // Peupler le filtre (liste) et le champ (édition)
             const selects = [document.getElementById('secteurSelect'), document.getElementById('id_secteur')];
             selects.forEach(select => {
@@ -108,7 +115,13 @@ async function loadSecteurs() {
 // Charger les clubs
 async function loadClubs() {
     try {
-        const response = await fetch('/api/admin/clubs/all');
+        const isNewOrAffilie = window.location.pathname.includes('licencies-new.html') || window.location.pathname.includes('licencies-affilie.html');
+        let url = '/api/admin/clubs/all';
+        if (isNewOrAffilie) {
+            url += '?saison_id=5'; // Saison 2026 par défaut
+        }
+
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (data.success) {
@@ -118,6 +131,27 @@ async function loadClubs() {
         }
     } catch (error) {
         console.error('Erreur chargement clubs:', error);
+    }
+}
+
+// Charger les grades
+async function loadGrades() {
+    try {
+        const response = await fetch('/api/admin/grades');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (data.success) {
+            gradesList = data.grades || [];
+            const select = document.getElementById('grade');
+            if (select) {
+                select.innerHTML = '<option value="">Sélectionner un grade</option>';
+                gradesList.forEach(g => {
+                    select.innerHTML += `<option value="${g.id_grade}">${escapeHtml(g.libelle)}</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Erreur chargement grades:', error);
     }
 }
 
@@ -148,18 +182,18 @@ async function loadSaisons() {
         const urlParams = new URLSearchParams(window.location.search);
         const licencieId = urlParams.get('id');
         let url = '/api/admin/saisons/licencies';
-        
+
         // Si on est sur la page d'affiliation, on exclut les saisons déjà prises
         if (window.location.pathname.includes('licencies-affilie.html') && licencieId) {
             url += `?exclude_athlete_id=${licencieId}`;
         }
-        
+
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (data.success && data.saisons) {
             saisonsList = data.saisons;
-            
+
             const selects = [document.getElementById('saisonSelect'), document.getElementById('id_saison')];
             selects.forEach(select => {
                 if (select) {
@@ -470,6 +504,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isListPage = window.location.pathname.includes('licencies-club.html');
         const isEditPage = window.location.pathname.includes('licencies-edit.html');
         const isAffiliePage = window.location.pathname.includes('licencies-affilie.html');
+        const isNewPage = window.location.pathname.includes('licencies-new.html');
 
         if (isListPage) {
             await loadAllLicencies();
@@ -489,6 +524,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const licencieForm = document.getElementById('licencieForm');
         if (licencieForm) {
             licencieForm.addEventListener('submit', saveLicencie);
+            
+            // Forcer les majuscules sur tous les champs sauf email
+            licencieForm.querySelectorAll('input[type="text"], input[type="tel"]').forEach(input => {
+                if (input.id !== 'email' && !input.readOnly) {
+                    input.addEventListener('input', (e) => {
+                        e.target.value = e.target.value.toUpperCase();
+                    });
+                }
+            });
         }
 
         window.addEventListener('click', (e) => {
@@ -499,6 +543,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Si on est sur une page de modification ou d'affiliation, charger les données
         if (isEditPage || isAffiliePage) {
             await checkAndLoadEditData();
+        }
+
+        // Si on est sur la page de création, charger le prochain numéro
+        if (isNewPage) {
+            await loadNextLicenceNumber();
         }
     } catch (error) {
         console.error('Erreur initialisation:', error);
@@ -534,7 +583,7 @@ async function checkAndLoadEditData() {
     try {
         const response = await fetch(`/api/admin/licencies/${licencieId}`);
         if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
-        
+
         const data = await response.json();
 
         if (data.success && data.licencie) {
@@ -583,8 +632,18 @@ async function checkAndLoadEditData() {
                 const radio = document.querySelector(`input[name="assure"][value="${assureVal}"]`);
                 if (radio) radio.checked = true;
             }
-        } else {
-            showNotification('Licencié non trouvé', 'error');
+            // Remplir les champs de texte additionnels
+            const textFields = {
+                'lieu_nais': l.lieu_nais,
+                'nation': l.nation,
+                'prof_ath': l.prof_ath,
+                'person_prevenir': l.person_prevenir,
+                'tel_person': l.tel_person
+            };
+            for (const [id, val] of Object.entries(textFields)) {
+                const el = document.getElementById(id);
+                if (el && val) el.value = val;
+            }
         }
     } catch (error) {
         console.error('Erreur pre-remplissage:', error);
@@ -594,58 +653,98 @@ async function checkAndLoadEditData() {
     }
 }
 
+// Charger le prochain numéro de licence disponible
+async function loadNextLicenceNumber() {
+    try {
+        const response = await fetch('/api/admin/licencies/next-number');
+        const data = await response.json();
+        if (data.success && data.next_number) {
+            const el = document.getElementById('num_licence');
+            if (el) el.value = data.next_number;
+        }
+    } catch (error) {
+        console.error('Erreur chargement prochain numéro:', error);
+    }
+}
+
+// Valider le format du contact (10 chiffres, commence par 01, 05 ou 07)
+function validateContact(phone) {
+    const regex = /^(01|05|07)\d{8}$/;
+    return regex.test(phone);
+}
+
+// Enregistrer un licencié (nouveau ou modification)
 async function saveLicencie(e) {
     e.preventDefault();
     const urlParams = new URLSearchParams(window.location.search);
     const licencieId = urlParams.get('id');
+    const isNew = window.location.pathname.includes('licencies-new.html');
 
-    if (!licencieId) {
+    if (!isNew && !licencieId) {
         showNotification('ID du licencié manquant', 'error');
         return;
     }
 
     // Récupération sécurisée des valeurs
     const getVal = (id) => document.getElementById(id)?.value || '';
-    
+
     const formData = {
         nom_prenoms: getVal('nom_prenoms'),
         id_club: getVal('id_club'),
-        id_saison: getVal('id_saison'),
+        id_saison: getVal('id_saison') || null,
         list_grade: getVal('grade'),
+        genre: getVal('genre'),
+        date_naissance: getVal('date_naissance') || null,
+        lieu_nais: getVal('lieu_nais'),
+        nation: getVal('nation'),
+        prof_ath: getVal('prof_ath'),
         contact: getVal('contact'),
         email: getVal('email'),
-        date_naissance: getVal('date_naissance') || null,
-        adresse: getVal('adresse'),
+        person_prevenir: getVal('person_prevenir'),
+        tel_person: getVal('tel_person'),
         assure: document.querySelector('input[name="assure"]:checked')?.value || 0
     };
 
-    console.log('Tentative d\'affiliation avec données:', formData);
+    // Validation des contacts
+    if (formData.contact && !validateContact(formData.contact)) {
+        showNotification('Le contact de l\'athlète doit avoir 10 chiffres et commencer par 01, 05 ou 07', 'error');
+        return;
+    }
+    if (formData.tel_person && !validateContact(formData.tel_person)) {
+        showNotification('Le contact du parent doit avoir 10 chiffres et commencer par 01, 05 ou 07', 'error');
+        return;
+    }
+
+    console.log('Tentative d\'enregistrement avec données:', formData);
 
     // Validation minimale
-    if (!formData.id_club || !formData.id_saison) {
-        showNotification('Le club et la saison sont obligatoires pour l\'affiliation', 'error');
+    if (!formData.nom_prenoms || !formData.id_club) {
+        showNotification('Le nom et le club sont obligatoires', 'error');
         return;
     }
 
     showLoading(true);
     try {
-        const response = await fetch(`/api/admin/licencies/${licencieId}`, {
-            method: 'PUT',
+        const url = isNew ? '/api/admin/licencies' : `/api/admin/licencies/${licencieId}`;
+        const method = isNew ? 'POST' : 'PUT';
+
+        const response = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-        
+
         const data = await response.json();
         console.log('Réponse du serveur:', data);
 
         if (data.success) {
-            showNotification('Affiliation réussie !', 'success');
+            showNotification(isNew ? 'Licencié créé avec succès !' : 'Mise à jour réussie !', 'success');
             // Redirection après un court délai
             setTimeout(() => {
                 window.location.href = 'licencies-club.html';
             }, 1500);
         } else {
-            showNotification('Erreur serveur: ' + (data.message || 'Échec de l\'affiliation'), 'error');
+            showNotification('Erreur serveur: ' + (data.message || 'Échec de l\'opération'), 'error');
         }
     } catch (error) {
         console.error('Erreur lors de l\'appel API:', error);
