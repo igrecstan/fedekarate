@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - FI-ADEKASH</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/admin.css">
     <style>
@@ -19,7 +22,7 @@
             background: white;
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -53,7 +56,7 @@
             background: white;
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .recent-section h2 {
@@ -108,6 +111,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="admin-layout">
         <div id="sidebar-container"></div>
@@ -124,21 +128,21 @@
             <div class="content">
                 <div class="page-header">
                     <h2>Bienvenue sur le tableau de bord</h2>
-                    <p>Voici un aperçu des activités de la plateforme.</p>
+                    <p>Voici un aperçu des activités pour la <strong>Saison 2026</strong>.</p>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-info">
-                            <h3><i class="fas fa-building"></i> Total Clubs</h3>
-                            <div class="stat-number" id="totalClubs">-</div>
+                            <h3><i class="fas fa-building"></i> Clubs affiliés (2026)</h3>
+                            <div class="stat-number" id="totalClubs">...</div>
                         </div>
                         <div class="stat-icon">🏢</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-info">
-                            <h3><i class="fas fa-users"></i> Total Licenciés</h3>
-                            <div class="stat-number" id="totalLicencies">-</div>
+                            <h3><i class="fas fa-users"></i> Licenciés affiliés (2026)</h3>
+                            <div class="stat-number" id="totalLicencies">...</div>
                         </div>
                         <div class="stat-icon">👥</div>
                     </div>
@@ -177,40 +181,51 @@
     <script>
         // Charger les statistiques
         async function loadStats() {
+            let saisonId = 5; // Fallback par défaut
+            const t = Date.now();
+
+            // 1. Chercher l'ID dynamique pour 2026
             try {
-                const response = await fetch('/api/admin/clubs/count');
-                const data = await response.json();
-                if (data.success) document.getElementById('totalClubs').innerText = data.count || 0;
-            } catch(e) { console.error(e); }
-            
+                const resSaisons = await fetch(`/api/admin/saisons/clubs?t=${t}`);
+                const dataSaisons = await resSaisons.json();
+                if (dataSaisons.success && dataSaisons.saisons) {
+                    const s2026 = dataSaisons.saisons.find(s => s.libelle_saison.includes('2026'));
+                    if (s2026) saisonId = s2026.id_saison;
+                }
+            } catch(e) { console.warn('Utilisation ID fallback 5'); }
+
             try {
-                const response = await fetch('/api/admin/licencies/count');
-                const data = await response.json();
-                if (data.success) document.getElementById('totalLicencies').innerText = data.count || 0;
-            } catch(e) { console.error(e); }
-            
+                const resClubs = await fetch(`/api/admin/clubs/count?saison=${saisonId}&t=${t}`);
+                const dataClubs = await resClubs.json();
+                if (dataClubs.success) document.getElementById('totalClubs').innerText = dataClubs.count || 0;
+            } catch (e) { console.error('Erreur clubs:', e); }
+
             try {
-                const response = await fetch('/api/admin/events/count');
-                const data = await response.json();
-                if (data.success) document.getElementById('totalEvents').innerText = data.count || 0;
-            } catch(e) { console.error(e); }
-            
+                const resLic = await fetch(`/api/admin/licencies/count?saison=${saisonId}&t=${t}`);
+                const dataLic = await resLic.json();
+                if (dataLic.success) document.getElementById('totalLicencies').innerText = dataLic.count || 0;
+            } catch (e) { console.error('Erreur licenciés:', e); }
+
             try {
-                const response = await fetch('/api/admin/messages/unread/count');
-                const data = await response.json();
-                if (data.success) document.getElementById('unreadMessages').innerText = data.count || 0;
-            } catch(e) { console.error(e); }
+                const resEvents = await fetch(`/api/admin/events/count?t=${t}`);
+                const dataEvents = await resEvents.json();
+                if (dataEvents.success) document.getElementById('totalEvents').innerText = dataEvents.count || 0;
+
+                const resMsgs = await fetch(`/api/admin/messages/unread/count?t=${t}`);
+                const dataMsgs = await resMsgs.json();
+                if (dataMsgs.success) document.getElementById('unreadMessages').innerText = dataMsgs.count || 0;
+            } catch (e) { console.error(e); }
         }
 
         // Charger les activités récentes
         async function loadRecentActivities() {
             const container = document.getElementById('recentActivities');
             container.innerHTML = '<div class="loader"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>';
-            
+
             try {
                 const response = await fetch('/api/admin/messages?limit=5');
                 const data = await response.json();
-                
+
                 if (data.success && data.messages && data.messages.length > 0) {
                     container.innerHTML = data.messages.map(msg => `
                         <div class="recent-item">
@@ -232,11 +247,12 @@
 
         loadStats();
         loadRecentActivities();
-        
+
         let refreshInterval = setInterval(() => {
             loadStats();
             loadRecentActivities();
         }, 30000);
     </script>
 </body>
+
 </html>

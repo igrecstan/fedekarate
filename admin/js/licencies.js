@@ -87,17 +87,21 @@ async function loadSecteurs() {
         const data = await response.json();
         if (data.success) {
             secteursList = data.secteurs || [];
-            const select = document.getElementById('secteurSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Tous les secteurs</option>';
-                secteursList.forEach(s => {
-                    select.innerHTML += `<option value="${s.id_secteur}">${escapeHtml(s.nom_secteur)}</option>`;
-                });
-            }
+            
+            // Peupler le filtre (liste) et le champ (édition)
+            const selects = [document.getElementById('secteurSelect'), document.getElementById('id_secteur')];
+            selects.forEach(select => {
+                if (select) {
+                    const defaultText = select.id === 'secteurSelect' ? 'Tous les secteurs' : 'Sélectionner un secteur';
+                    select.innerHTML = `<option value="">${defaultText}</option>`;
+                    secteursList.forEach(s => {
+                        select.innerHTML += `<option value="${s.id_secteur}">${escapeHtml(s.nom_secteur)}</option>`;
+                    });
+                }
+            });
         }
     } catch (error) {
         console.error('Erreur chargement secteurs:', error);
-        showNotification('Erreur chargement des secteurs', 'error');
     }
 }
 
@@ -109,29 +113,32 @@ async function loadClubs() {
         const data = await response.json();
         if (data.success) {
             clubsList = data.clubs || [];
+            // Les clubs sont peuplés dynamiquement par updateClubSelect()
             updateClubSelect();
         }
     } catch (error) {
         console.error('Erreur chargement clubs:', error);
-        clubsList = [];
-        showNotification('Erreur chargement des clubs', 'warning');
     }
 }
 
 // Mettre à jour la liste des clubs en fonction du secteur sélectionné
 function updateClubSelect() {
-    const secteurValue = document.getElementById('secteurSelect')?.value;
-    const select = document.getElementById('clubSelect');
-    if (!select) return;
+    const secteurSelect = document.getElementById('secteurSelect') || document.getElementById('id_secteur');
+    const clubSelect = document.getElementById('clubSelect') || document.getElementById('id_club');
 
+    if (!clubSelect) return;
+
+    const secteurValue = secteurSelect ? secteurSelect.value : '';
     let filteredClubs = clubsList;
+
     if (secteurValue) {
         filteredClubs = clubsList.filter(club => club.List_sect && club.List_sect.toString() === secteurValue);
     }
 
-    select.innerHTML = '<option value="">Tous les clubs</option>';
+    const defaultText = clubSelect.id === 'clubSelect' ? 'Tous les clubs' : 'Sélectionner un club';
+    clubSelect.innerHTML = `<option value="">${defaultText}</option>`;
     filteredClubs.forEach(club => {
-        select.innerHTML += `<option value="${club.id_club}">${escapeHtml(club.nom_club)} (${club.identif_club || ''})</option>`;
+        clubSelect.innerHTML += `<option value="${club.id_club}">${escapeHtml(club.nom_club)} (${club.identif_club || ''})</option>`;
     });
 }
 
@@ -143,21 +150,21 @@ async function loadSaisons() {
         const data = await response.json();
         if (data.success && data.saisons) {
             saisonsList = data.saisons;
-            console.log('Saisons chargées pour licenciés:', saisonsList);
-
-            const select = document.getElementById('saisonSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Toutes les saisons</option>';
-                saisonsList.forEach(s => {
-                    select.innerHTML += `<option value="${s.id_saison}">${escapeHtml(s.libelle_saison)}</option>`;
-                });
-            }
-        } else {
-            console.warn('Aucune saison trouvée pour licenciés');
+            
+            const selects = [document.getElementById('saisonSelect'), document.getElementById('id_saison')];
+            selects.forEach(select => {
+                if (select) {
+                    const defaultText = select.id === 'saisonSelect' ? 'Toutes les saisons' : 'Sélectionner une saison';
+                    select.innerHTML = `<option value="">${defaultText}</option>`;
+                    saisonsList.forEach(s => {
+                        const libelle = s.libelle_saison ? s.libelle_saison.toString() : '';
+                        select.innerHTML += `<option value="${s.id_saison}">${libelle}</option>`;
+                    });
+                }
+            });
         }
     } catch (error) {
         console.error('Erreur chargement saisons:', error);
-        showNotification('Erreur chargement des saisons', 'warning');
     }
 }
 
@@ -318,8 +325,9 @@ function displayLicencies() {
             <td><span class="badge-statut ${statutClass}">${statutText}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editLicencie(${licencie.id_licencie})"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn delete" onclick="confirmDelete(${licencie.id_licencie}, '${escapeHtml(fullName.replace(/'/g, "\\'"))}')"><i class="fas fa-trash-alt"></i></button>
+                    <button class="action-btn edit" onclick="editLicencie(${licencie.id_licencie})" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn delete" onclick="confirmDelete(${licencie.id_licencie}, '${escapeHtml(fullName.replace(/'/g, "\\'"))}')" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
+                    <button class="action-btn details" onclick="showDetails(${licencie.id_licencie})" title="Affiliation"><i class="fas fa-plus-circle"></i></button>
                 </div>
             </td>
         `;
@@ -390,6 +398,11 @@ function editLicencie(id) {
     window.location.href = `licencies-edit.html?id=${id}`;
 }
 
+function showDetails(id) {
+    // Pour l'instant on redirige vers l'édition ou on pourra ouvrir une modal
+    window.location.href = `licencies-affilie.html?id=${id}`;
+}
+
 function confirmDelete(id, name) {
     deleteId = id;
     const deleteMessage = document.getElementById('deleteMessage');
@@ -431,30 +444,335 @@ async function deleteLicencie() {
 }
 
 // Initialisation
+// Initialisation
 document.addEventListener('DOMContentLoaded', async () => {
-    setTimeout(async () => {
-        if (!checkLicenciesAuth()) return;
+    if (!checkLicenciesAuth()) return;
+    updateUserDisplay();
 
-        updateUserDisplay();
+    try {
+        // Charger les données de référence en parallèle pour gagner du temps
+        await Promise.all([
+            loadSecteurs(),
+            loadClubs(),
+            loadSaisons(),
+            loadGrades()
+        ]);
 
-        await loadSecteurs();
-        await loadClubs();
-        await loadSaisons();  // Charger les saisons
-        await loadAllLicencies();
+        const isListPage = window.location.pathname.includes('licencies-club.html');
+        const isEditPage = window.location.pathname.includes('licencies-edit.html');
+        const isAffiliePage = window.location.pathname.includes('licencies-affilie.html');
 
-        const secteurSelect = document.getElementById('secteurSelect');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-
-        if (secteurSelect) {
-            secteurSelect.addEventListener('change', () => updateClubSelect());
+        if (isListPage) {
+            await loadAllLicencies();
         }
+
+        // Configurer les écouteurs d'événements
+        const sectSelect = document.getElementById('secteurSelect') || document.getElementById('id_secteur');
+        if (sectSelect) {
+            sectSelect.addEventListener('change', () => updateClubSelect());
+        }
+
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
         if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', deleteLicencie);
+        }
+
+        const licencieForm = document.getElementById('licencieForm');
+        if (licencieForm) {
+            licencieForm.addEventListener('submit', saveLicencie);
         }
 
         window.addEventListener('click', (e) => {
             const modal = document.getElementById('deleteConfirmModal');
             if (e.target === modal) closeDeleteModal();
         });
-    }, 100);
+
+        // Si on est sur une page de modification ou d'affiliation, charger les données
+        if (isEditPage || isAffiliePage) {
+            await checkAndLoadEditData();
+        }
+    } catch (error) {
+        console.error('Erreur initialisation:', error);
+    }
 });
+
+// Charger les grades
+async function loadGrades() {
+    try {
+        const response = await fetch('/api/admin/grades');
+        const data = await response.json();
+        if (data.success) {
+            const select = document.getElementById('grade');
+            if (select) {
+                select.innerHTML = '<option value="">Sélectionner un grade</option>';
+                data.grades.forEach(g => {
+                    select.innerHTML += `<option value="${g.id_grade}">${escapeHtml(g.libelle)}</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Erreur chargement grades:', error);
+    }
+}
+
+async function checkAndLoadEditData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const licencieId = urlParams.get('id');
+
+    if (!licencieId) return;
+
+    showLoading(true);
+    try {
+        const response = await fetch(`/api/admin/licencies/${licencieId}`);
+        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+        
+        const data = await response.json();
+
+        if (data.success && data.licencie) {
+            const l = data.licencie;
+            console.log('Données licencié reçues:', l);
+
+            // Remplir les champs texte
+            const fields = {
+                'num_licence': l.num_licence,
+                'nom_prenoms': l.nom_prenoms,
+                'contact': l.contact,
+                'email': l.email,
+                'date_naissance': l.date_naissance,
+                'adresse': l.adresse
+            };
+
+            for (const [id, val] of Object.entries(fields)) {
+                const el = document.getElementById(id);
+                if (el) el.value = val || '';
+            }
+
+            // Gérer les selects avec dépendances (Secteur -> Club)
+            const secteurSelect = document.getElementById('id_secteur');
+            if (secteurSelect && l.id_secteur) {
+                secteurSelect.value = l.id_secteur;
+                updateClubSelect(); // Re-peupler la liste des clubs
+            }
+
+            // Remplir les autres selects
+            const selects = {
+                'id_club': l.id_club,
+                'id_saison': l.id_saison,
+                'grade': l.id_grade,
+                'statut': l.statut || 'actif',
+                'genre': l.genre
+            };
+
+            for (const [id, val] of Object.entries(selects)) {
+                const el = document.getElementById(id);
+                if (el && val) el.value = val.toString();
+            }
+        } else {
+            showNotification('Licencié non trouvé', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur pre-remplissage:', error);
+        showNotification('Erreur lors de la récupération des données', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function saveLicencie(e) {
+    e.preventDefault();
+    const urlParams = new URLSearchParams(window.location.search);
+    const licencieId = urlParams.get('id');
+
+    const formData = {
+        nom_prenoms: document.getElementById('nom_prenoms').value,
+        id_club: document.getElementById('id_club').value,
+        id_saison: document.getElementById('id_saison').value,
+        list_grade: document.getElementById('grade').value,
+        contact: document.getElementById('contact').value,
+        email: document.getElementById('email').value,
+        date_naissance: document.getElementById('date_naissance').value,
+        adresse: document.getElementById('adresse').value,
+        statut: document.getElementById('statut').value
+    };
+
+    showLoading(true);
+    try {
+        const response = await fetch(`/api/admin/licencies/${licencieId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Licencié mis à jour avec succès', 'success');
+            setTimeout(() => window.location.href = 'licencies-club.html', 1500);
+        } else {
+            showNotification('Erreur: ' + (data.message || 'Mise à jour impossible'), 'error');
+        }
+    } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        showNotification('Erreur lors de la sauvegarde', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Export Excel
+function exportToExcel() {
+    if (!filteredLicencies || filteredLicencies.length === 0) {
+        showNotification("Aucune donnée à exporter.", "warning");
+        return;
+    }
+
+    // Préparer les données pour l'export
+    const dataToExport = filteredLicencies.map((l, index) => {
+        return {
+            'N°': index + 1,
+            'Numéro Licence': l.num_licence || '-',
+            'Nom et Prénom': `${l.nom || ''} ${l.prenom || ''}`.trim() || '-',
+            'Club': l.nom_club || '-',
+            'Secteur': l.nom_secteur || '-',
+            'Grade': l.grade || '-',
+            'Contact': l.contact || '-',
+            'Statut': l.statut === 'actif' ? 'Actif' : (l.statut === 'inactif' ? 'Inactif' : 'En attente')
+        };
+    });
+
+    // Créer un classeur Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Ajuster la largeur des colonnes
+    const wscols = [
+        { wch: 5 },  // N°
+        { wch: 15 }, // Numéro Licence
+        { wch: 35 }, // Nom et Prénom
+        { wch: 25 }, // Club
+        { wch: 20 }, // Secteur
+        { wch: 15 }, // Grade
+        { wch: 15 }, // Contact
+        { wch: 12 }  // Statut
+    ];
+    ws['!cols'] = wscols;
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "Licencies");
+
+    // Générer le fichier et déclencher le téléchargement
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Liste_Licencies_${date}.xlsx`);
+}
+
+function exportToPDF() {
+    if (!filteredLicencies || filteredLicencies.length === 0) {
+        showNotification("Aucune donnée à exporter.", "warning");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Paysage
+
+    // Année de la saison
+    const selectedSaison = saisonsList.find(s => s.id_saison.toString() === currentSaison);
+    const anneeSaison = selectedSaison ? selectedSaison.libelle_saison : (new Date().getFullYear());
+
+    // Titre principal centré
+    doc.setFontSize(18);
+    doc.setTextColor(40, 44, 52);
+    doc.setFont(undefined, 'bold');
+    const title = `LISTE DES LICENCIES DE LA SAISON ${anneeSaison}`;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const textWidth = doc.getTextWidth(title);
+    doc.text(title, (pageWidth - textWidth) / 2, 20);
+
+    let startY = 30;
+
+    // Si un club est sélectionné, on affiche ses infos en 2 colonnes
+    if (currentClub) {
+        const clubInfo = clubsList.find(c => c.id_club.toString() === currentClub.toString());
+        if (clubInfo) {
+            // Ligne de séparation
+            doc.setDrawColor(102, 126, 234);
+            doc.setLineWidth(0.5);
+            doc.line(14, 25, 283, 25);
+
+            const nbrAffilies = filteredLicencies.length;
+            const nbrAssures = filteredLicencies.filter(l => l.assure == 1 || l.assure === true).length;
+
+            doc.setFontSize(11);
+            doc.setTextColor(50);
+
+            // Colonne GAUCHE
+            doc.setFont(undefined, 'bold'); doc.text("Secteur : ", 14, 35);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.nom_secteur || clubInfo.secteur || '-'), 45, 35);
+
+            doc.setFont(undefined, 'bold'); doc.text("Club : ", 14, 42);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.nom_club || '-'), 45, 42);
+
+            doc.setFont(undefined, 'bold'); doc.text("Numero du club : ", 14, 49);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.identif_club || '-'), 45, 49);
+
+            doc.setFont(undefined, 'bold'); doc.text("Nbr d'affilie : ", 14, 56);
+            doc.setFont(undefined, 'normal'); doc.text(String(nbrAffilies), 45, 56);
+
+            // Colonne DROITE (à partir du milieu de la page)
+            const rightColX = 160;
+            const rightValX = 200;
+
+            doc.setFont(undefined, 'bold'); doc.text("Representant : ", rightColX, 35);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.representant || '-'), rightValX, 35);
+
+            doc.setFont(undefined, 'bold'); doc.text("Grade : ", rightColX, 42);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.grade || '-'), rightValX, 42);
+
+            doc.setFont(undefined, 'bold'); doc.text("Contact club : ", rightColX, 49);
+            doc.setFont(undefined, 'normal'); doc.text(String(clubInfo.contact || '-'), rightValX, 49);
+
+            doc.setFont(undefined, 'bold'); doc.text("Nbr d'assure : ", rightColX, 56);
+            doc.setFont(undefined, 'normal'); doc.text(String(nbrAssures), rightValX, 56);
+
+            startY = 70;
+        }
+    }
+
+    // Tableau
+    const columns = ["N°", "Licence", "Nom et Prenom", "Grade", "Contact", "OBSER."];
+    const rows = filteredLicencies.map((l, index) => [
+        index + 1,
+        l.num_licence || '-',
+        `${l.nom || ''} ${l.prenom || ''}`.trim() || '-',
+        l.grade || '-',
+        l.contact || '-',
+        (l.assure == 1 || l.assure === true) ? 'ASSURE' : '-'
+    ]);
+
+    doc.autoTable({
+        head: [columns],
+        body: rows,
+        startY: startY,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 126, 234], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: {
+            0: { cellWidth: 12 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 100 },
+            3: { cellWidth: 40 },
+            4: { cellWidth: 40 },
+            5: { cellWidth: 25 }
+        }
+    });
+
+    // Pied de page
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} sur ${pageCount} - Document généré le ${new Date().toLocaleDateString('fr-FR')} - FI-ADEKASH`, 14, 205);
+    }
+
+    // Sauvegarde
+    const fileName = `Liste_Licencies_${anneeSaison}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+}

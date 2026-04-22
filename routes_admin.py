@@ -87,15 +87,28 @@ def admin_logout():
 
 @admin_bp.route('/clubs/count', methods=['GET'])
 def get_clubs_count():
+    saison_id = request.args.get('saison', type=int)
+    logger.info(f"Requête get_clubs_count avec saison_id={saison_id}")
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT COUNT(*) as count FROM club")
+        if saison_id:
+            # On vérifie dans clubs_saison avec jointure pour être sûr
+            cursor.execute("""
+                SELECT COUNT(DISTINCT cs.List_club) as count 
+                FROM clubs_saison cs
+                WHERE cs.List_saison = %s
+            """, (saison_id,))
+        else:
+            cursor.execute("SELECT COUNT(*) as count FROM club")
         result = cursor.fetchone()
-        return jsonify({'success': True, 'count': result['count'] if result else 0})
+        count = result['count'] if result else 0
+        logger.info(f"Résultat clubs_count: {count}")
+        return jsonify({'success': True, 'count': count})
     except Exception as e:
+        logger.error(f"Erreur get_clubs_count: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         if cursor: cursor.close()
@@ -294,6 +307,31 @@ def get_last_club_identif():
         result = cursor.fetchone()
         return jsonify({'success': True, 'last_identif': result['identif_club'] if result else None})
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/clubs/<int:club_id>', methods=['DELETE'])
+def delete_club(club_id):
+    """Supprime un club et ses affiliations"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Supprimer d'abord les affiliations
+        cursor.execute("DELETE FROM clubs_saison WHERE List_club = %s", (club_id,))
+        
+        # Supprimer le club
+        cursor.execute("DELETE FROM club WHERE id_club = %s", (club_id,))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Club supprimé avec succès'})
+    except Exception as e:
+        if conn: conn.rollback()
+        logger.error(f"Erreur suppression club {club_id}: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         if cursor: cursor.close()

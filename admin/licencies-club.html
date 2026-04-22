@@ -211,7 +211,7 @@
         }
 
         .cell-text {
-            font-size: 12px;
+            font-size: 13px;
             color: #334155;
             line-height: 1.4;
         }
@@ -285,6 +285,15 @@
 
         .action-btn.delete:hover {
             background: #fed7d7;
+            transform: scale(1.1);
+        }
+
+        .action-btn.details {
+            color: #48bb78;
+        }
+
+        .action-btn.details:hover {
+            background: #c6f6d5;
             transform: scale(1.1);
         }
 
@@ -636,35 +645,32 @@
                 <div class="filters-container">
                     <div class="filter-group">
                         <label><i class="fas fa-building"></i> Secteur</label>
-                        <select id="secteurSelect">
+                        <select id="secteurSelect" onchange="applyFilters()">
                             <option value="">Tous les secteurs</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label><i class="fas fa-futbol"></i> Club</label>
-                        <select id="clubSelect">
+                        <select id="clubSelect" onchange="applyFilters()">
                             <option value="">Tous les clubs</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label><i class="fas fa-calendar-alt"></i> Saison</label>
-                        <select id="saisonSelect">
+                        <select id="saisonSelect" onchange="applyFilters()">
                             <option value="">Toutes les saisons</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label><i class="fas fa-tag"></i> Statut</label>
-                        <select id="statutSelect">
+                        <select id="statutSelect" onchange="applyFilters()">
                             <option value="">Tous les statuts</option>
                             <option value="actif">Actif</option>
                             <option value="inactif">Inactif</option>
-                            <option value="en_attente">En attente</option>
                         </select>
                     </div>
-                    <div class="filter-actions">
-                        <button class="btn-apply" onclick="applyFilters()">
-                            <i class="fas fa-search"></i> Appliquer
-                        </button>
+                    <div class="filter-group" style="flex: 0 0 auto;">
+                        <label>&nbsp;</label>
                         <button class="btn-reset" onclick="resetFilters()">
                             <i class="fas fa-undo-alt"></i> Réinitialiser
                         </button>
@@ -680,9 +686,17 @@
                             <i class="fas fa-search"></i> Rechercher
                         </button>
                     </div>
-                    <button class="btn-primary" onclick="window.location.href='licencies-new.html'">
-                        <i class="fas fa-user-plus"></i> Nouveau Licencié
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" style="background: #2d3748;" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
+                        <button class="btn-primary" style="background: #e53e3e;" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button class="btn-primary" onclick="window.location.href='licencies-new.html'">
+                            <i class="fas fa-user-plus"></i> Nouveau Licencié
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tableau des licenciés -->
@@ -733,6 +747,9 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="js/licencies.js"></script>
     <script src="js/admin.js"></script>
 </body>

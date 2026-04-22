@@ -45,6 +45,10 @@ def update_activity_statuses(conn):
         # Update Clubs
         cursor.execute(f"UPDATE club SET statut = 'inactif' WHERE id_club NOT IN (SELECT List_club FROM clubs_saison WHERE List_saison IN {ids_str})")
         cursor.execute(f"UPDATE club SET statut = 'actif' WHERE id_club IN (SELECT List_club FROM clubs_saison WHERE List_saison IN {ids_str})")
+        
+        # Update Athletes (Licenciés)
+        cursor.execute(f"UPDATE athletes SET statut = 'inactif' WHERE id_ath NOT IN (SELECT list_ath FROM athletes_saison WHERE list_saison IN {ids_str})")
+        cursor.execute(f"UPDATE athletes SET statut = 'actif' WHERE id_ath IN (SELECT list_ath FROM athletes_saison WHERE list_saison IN {ids_str})")
             
         conn.commit()
         cursor.close()

@@ -587,12 +587,12 @@ html { scroll-behavior: smooth; }
 .slide:nth-child(2) .slide-bg {
     background-image:
 	linear-gradient(135deg, rgba(14,14,14,0.75) 0%, rgba(200,16,46,0.10) 100%),
-        url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1600&q=80');
+        url('../images/slide2.jpg');
 }
 .slide:nth-child(3) .slide-bg {
     background-image:
 	linear-gradient(135deg, rgba(14,14,14,0.75) 0%, rgba(200,16,46,0.10) 100%),
-        url('https://images.unsplash.com/photo-1544717305-2782549b5136?w=1600&q=80');
+        url('../images/slide3.jpg');
 }
 
 .slide-content {
