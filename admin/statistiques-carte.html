@@ -26,7 +26,21 @@
 
         /* Tabs Navigation */
         .tabs-container { display: flex; gap: 2px; background: #e2e8f0; padding: 4px; border-radius: 12px; margin-bottom: 24px; width: fit-content; }
-        .tab-link { padding: 10px 24px; text-decoration: none; color: #64748b; font-weight: 600; border-radius: 8px; transition: 0.2s; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+        .tab-link {
+            padding: 10px 24px;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
         .tab-link:hover { color: #1e293b; background: rgba(255,255,255,0.5); }
         .tab-link.active { background: white; color: #4f46e5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
@@ -51,6 +65,29 @@
         .popup-val { font-weight: 700; color: #1e293b; }
 
         .footer-note { margin-top: 20px; font-size: 0.75rem; color: #5b6e8c; text-align: right; }
+
+        /* Badge Markers */
+        .sector-badge {
+            background: #4f46e5;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            border: 1.5px solid white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .sector-badge:hover {
+            background: #3730a3;
+            transform: translateY(-2px) scale(1.05);
+            z-index: 1000 !important;
+        }
+
+        .legend-circle { width: 14px; height: 14px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -73,8 +110,8 @@
             </div>
 
             <div class="tabs-container">
-                <a href="statistiques-liste.html" class="tab-link">📋 Liste détaillée</a>
-                <a href="statistiques-carte.html" class="tab-link active">🗺️ Vue cartographique</a>
+                <button onclick="focusAbidjan()" class="tab-link" id="btnAbidjan">📍 Abidjan</button>
+                <button onclick="focusInterieur()" class="tab-link active" id="btnInterieur">🌍 Intérieur</button>
             </div>
 
             <div class="saison-card">
@@ -92,16 +129,14 @@
             <div class="map-wrapper">
                 <div id="statsMap"></div>
                 <div class="map-legend">
-                    <div class="legend-title">Taille des cercles</div>
-                    <div class="legend-item">Volume de licenciés par secteur</div>
-                    <div class="legend-title" style="margin-top: 10px;">Couleurs</div>
+                    <div class="legend-title">Indicateurs</div>
                     <div class="legend-item"><div class="legend-circle" style="background: #4f46e5;"></div> Secteur actif</div>
                     <div class="legend-item"><div class="legend-circle" style="background: #94a3b8;"></div> Aucune donnée</div>
                 </div>
             </div>
 
             <div class="footer-note">
-                <i class="fas fa-info-circle"></i> Cliquez sur un marqueur pour voir les détails statistiques du secteur.
+                <i class="fas fa-info-circle"></i> Cliquez sur un badge pour voir les détails statistiques du secteur.
             </div>
         </div>
     </main>
@@ -153,7 +188,7 @@
 
     // Initialisation de la carte
     function initMap() {
-        map = L.map('statsMap').setView([7.539, -5.547], 7); // Centré sur la Côte d'Ivoire
+        map = L.map('statsMap').setView([7.539, -5.547], 7); 
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CARTO'
@@ -193,53 +228,91 @@
         });
     }
 
+    let lastData = null;
+
     // Charger et afficher les données sur la carte
     async function chargerStatsCarte() {
         if (!currentSaisonId) return;
 
         document.getElementById('mapStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour de la carte...';
-        markersLayer.clearLayers();
-
+        
         try {
             const response = await fetch(`/api/admin/stats/sectorielles?saison_id=${currentSaisonId}`);
             const data = await response.json();
 
             if (data.success && data.sectoriel) {
-                let count = 0;
-                data.sectoriel.forEach(sector => {
-                    const coords = SECTOR_COORDS[sector.secteur.toUpperCase()];
-                    if (coords) {
-                        const radius = Math.sqrt(sector.total_licencie || 1) * 3000 + 5000; // Taille proportionnelle
-                        const color = sector.total_licencie > 0 ? '#4f46e5' : '#94a3b8';
-                        
-                        const circle = L.circle(coords, {
-                            color: color,
-                            fillColor: color,
-                            fillOpacity: 0.6,
-                            radius: radius
-                        });
-
-                        const popupHtml = `
-                            <div class="popup-content">
-                                <div class="popup-title">${sector.secteur}</div>
-                                <div class="popup-stat"><span class="popup-label">Clubs :</span> <span class="popup-val">${sector.total_club}</span></div>
-                                <div class="popup-stat"><span class="popup-label">Licenciés :</span> <span class="popup-val">${sector.total_licencie}</span></div>
-                                <div class="popup-stat"><span class="popup-label">Ceintures Noires :</span> <span class="popup-val">${sector.total_ceinture_noire}</span></div>
-                                <div class="popup-stat"><span class="popup-label">Assurés :</span> <span class="popup-val">${sector.total_assure}</span></div>
-                            </div>
-                        `;
-
-                        circle.bindPopup(popupHtml);
-                        circle.addTo(markersLayer);
-                        count++;
-                    }
-                });
-                document.getElementById('mapStatus').innerHTML = `<i class="fas fa-check-circle" style="color:#10b981"></i> ${count} secteurs affichés`;
+                lastData = data.sectoriel;
+                updateMapDisplay();
             }
         } catch (error) {
             console.error('Erreur stats carte:', error);
             document.getElementById('mapStatus').innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i> Erreur de chargement';
         }
+    }
+
+    function updateMapDisplay() {
+        if (!lastData) return;
+        markersLayer.clearLayers();
+        
+        const showAbidjan = document.getElementById('btnAbidjan').classList.contains('active');
+        const abidjanCommunes = ["ABOBO", "ADJAME", "ANYAMA", "COCODY", "KOUMASSI", "PORT-BOUET", "YOPOUGON", "TREICHVILLE", "MARCORY", "PLATEAU"];
+        
+        let bounds = L.latLngBounds();
+        let count = 0;
+
+        lastData.forEach(sector => {
+            const name = sector.secteur.toUpperCase();
+            const isAbidjan = abidjanCommunes.includes(name);
+            
+            if ((showAbidjan && isAbidjan) || (!showAbidjan && !isAbidjan)) {
+                const coords = SECTOR_COORDS[name];
+                if (coords) {
+                    const isActive = sector.total_licencie > 0;
+                    const color = isActive ? '#4f46e5' : '#94a3b8';
+                    
+                    const badgeIcon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="sector-badge" style="background:${color}">${sector.secteur}</div>`,
+                        iconSize: [100, 30],
+                        iconAnchor: [50, 15]
+                    });
+
+                    const marker = L.marker(coords, { icon: badgeIcon });
+
+                    const popupHtml = `
+                        <div class="popup-content">
+                            <div class="popup-title">${sector.secteur}</div>
+                            <div class="popup-stat"><span class="popup-label">Clubs :</span> <span class="popup-val">${sector.total_club}</span></div>
+                            <div class="popup-stat"><span class="popup-label">Licenciés :</span> <span class="popup-val">${sector.total_licencie}</span></div>
+                            <div class="popup-stat"><span class="popup-label">Ceintures Noires :</span> <span class="popup-val">${sector.total_ceinture_noire}</span></div>
+                            <div class="popup-stat"><span class="popup-label">Assurés :</span> <span class="popup-val">${sector.total_assure}</span></div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupHtml);
+                    marker.addTo(markersLayer);
+                    bounds.extend(coords);
+                    count++;
+                }
+            }
+        });
+
+        if (count > 0) {
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+        document.getElementById('mapStatus').innerHTML = `<i class="fas fa-check-circle" style="color:#10b981"></i> ${count} secteurs (${showAbidjan ? 'Abidjan' : 'Intérieur'})`;
+    }
+
+    function focusAbidjan() {
+        document.getElementById('btnAbidjan').classList.add('active');
+        document.getElementById('btnInterieur').classList.remove('active');
+        updateMapDisplay();
+    }
+
+    function focusInterieur() {
+        document.getElementById('btnInterieur').classList.add('active');
+        document.getElementById('btnAbidjan').classList.remove('active');
+        updateMapDisplay();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

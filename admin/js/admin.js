@@ -166,8 +166,7 @@ function initSidebarAfterLoad() {
     
     // Menu principal
     document.querySelectorAll('.nav-main').forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === currentPage || (href === 'statistiques-liste.html' && currentPage === 'statistiques-carte.html')) {
+        if (link.getAttribute('href') === currentPage) {
             link.classList.add('active');
         }
     });
@@ -188,9 +187,15 @@ function initSidebarAfterLoad() {
     }
     
     // Ouvrir le sous-menu Licenciés si actif
-    if (activeSubmenuFound && ['licencies-club.html', 'licencies-new.html', 'licencies-edit.html'].includes(currentPage)) {
+    if (activeSubmenuFound && ['licencies-club.html', 'licencies-new.html', 'licencies-edit.html', 'licencies-affilie.html'].includes(currentPage)) {
         const licenciesMenu = document.getElementById('licenciesMenu');
         if (licenciesMenu) licenciesMenu.classList.add('open');
+    }
+
+    // Ouvrir le sous-menu Statistiques si actif
+    if (activeSubmenuFound && ['statistiques-liste.html', 'statistiques-carte.html'].includes(currentPage)) {
+        const statsMenu = document.getElementById('statsMenu');
+        if (statsMenu) statsMenu.classList.add('open');
     }
     
     // Déconnexion
