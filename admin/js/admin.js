@@ -166,7 +166,8 @@ function initSidebarAfterLoad() {
     
     // Menu principal
     document.querySelectorAll('.nav-main').forEach(link => {
-        if (link.getAttribute('href') === currentPage) {
+        const href = link.getAttribute('href');
+        if (href === currentPage || (href === 'statistiques-liste.html' && currentPage === 'statistiques-carte.html')) {
             link.classList.add('active');
         }
     });

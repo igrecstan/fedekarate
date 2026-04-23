@@ -265,6 +265,41 @@
             background-color: #be123c;
             transform: translateY(-1px);
         }
+
+        /* Tabs Navigation */
+        .tabs-container {
+            display: flex;
+            gap: 2px;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            width: fit-content;
+        }
+
+        .tab-link {
+            padding: 10px 24px;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-link:hover {
+            color: #1e293b;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .tab-link.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -281,9 +316,13 @@
         </div>
 
         <div class="content">
-            <div class="page-header">
-                <h2>Statistiques par secteur et par saison</h2>
-                <p>Nouveaux clubs, totaux, licenciés, ceintures noires et assurances</p>
+                <h2>Statistiques sectorielles</h2>
+                <p>Analyse des performances par secteur et par saison</p>
+            </div>
+
+            <div class="tabs-container">
+                <a href="statistiques-liste.html" class="tab-link active">📋 Liste détaillée</a>
+                <a href="statistiques-carte.html" class="tab-link">🗺️ Vue cartographique</a>
             </div>
 
             <div class="saison-card">
