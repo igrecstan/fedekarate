@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliation Club | FI-ADEKASH</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: #f0f2f5; color: #1e1e2a; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+        .payment-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 450px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 2rem; color: white; text-align: center; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; font-size: 0.9rem; }
+        .content { padding: 2rem; }
+        .summary { background: #f8fafc; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+        .summary-item { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.95rem; }
+        .summary-item:last-child { margin-bottom: 0; padding-top: 0.8rem; border-top: 1px dashed #cbd5e0; font-weight: 700; font-size: 1.1rem; color: #10b981; }
+        .payment-methods { margin-bottom: 2rem; }
+        .payment-methods h3 { font-size: 1rem; margin-bottom: 1rem; color: #4a5568; }
+        .methods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .method-btn { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .method-btn:hover { border-color: #10b981; background: #f7fafc; }
+        .method-btn.active { border-color: #10b981; background: #ecfdf5; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+        .method-btn i { font-size: 1.5rem; }
+        .method-btn span { font-size: 0.8rem; font-weight: 600; }
+        .btn-pay { width: 100%; background: #1e1e2a; color: white; border: none; padding: 1.2rem; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+        .btn-pay:hover { background: #000; transform: translateY(-2px); }
+        .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 2rem; z-index: 20; }
+        .success-icon { width: 80px; height: 80px; background: #d1fae5; color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 1.5rem; }
+        .success-overlay h2 { color: #059669; margin-bottom: 1rem; }
+        .success-overlay p { color: #4a5568; margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="payment-card">
+        <div class="header">
+            <h1>FI-ADEKASH</h1>
+            <p>Affiliation Annuelle du Club</p>
+        </div>
+        <div class="content" style="position: relative;">
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Validation de l'affiliation club...</p>
+            </div>
+            
+            <div id="successOverlay" class="success-overlay">
+                <div class="success-icon"><i class="fas fa-check"></i></div>
+                <h2>Club Affilié !</h2>
+                <p>Votre club est désormais à jour pour la saison 2026. Bienvenue dans votre espace.</p>
+                <button class="btn-pay" onclick="window.location.href='espace.html'">Accéder au Tableau de Bord</button>
+            </div>
+
+            <div class="summary">
+                <div class="summary-item">
+                    <span>Objet</span>
+                    <span>Affiliation Club 2026</span>
+                </div>
+                <div class="summary-item">
+                    <span>Club</span>
+                    <span id="clubNameDisplay">...</span>
+                </div>
+                <div class="summary-item">
+                    <span>Montant</span>
+                    <span id="clubAmountDisplay">... FCFA</span>
+                </div>
+            </div>
+
+            <div class="payment-methods">
+                <h3>Mode de paiement</h3>
+                <div class="methods-grid">
+                    <div class="method-btn active" onclick="selectMethod(this, 'om')">
+                        <i class="fas fa-mobile-alt" style="color: #ff6600;"></i>
+                        <span>Orange Money</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'moov')">
+                        <i class="fas fa-mobile-alt" style="color: #00a1e1;"></i>
+                        <span>Moov Money</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'mtn')">
+                        <i class="fas fa-mobile-alt" style="color: #ffcc00;"></i>
+                        <span>MTN MoMo</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'visa')">
+                        <i class="fas fa-credit-card" style="color: #1a1f71;"></i>
+                        <span>Carte Visa/MC</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btnPay" class="btn-pay" onclick="processPayment()">
+                <span id="btnPayText">Payer ... FCFA</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const clubIdReel = sessionStorage.getItem('id_club_reel');
+        const clubNom = sessionStorage.getItem('clubNom');
+        let currentClubAmount = 10000;
+        
+        document.getElementById('clubNameDisplay').textContent = clubNom || "Votre Club";
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/club/config');
+                const data = await response.json();
+                if (data.success) {
+                    currentClubAmount = data.tarif_affiliation_club;
+                    document.getElementById('clubAmountDisplay').textContent = currentClubAmount.toLocaleString() + " FCFA";
+                    document.getElementById('btnPayText').textContent = `Payer ${currentClubAmount.toLocaleString()} FCFA`;
+                }
+            } catch (e) { console.error(e); }
+        }
+        loadConfig();
+
+        function selectMethod(el, method) {
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        async function processPayment() {
+            const overlay = document.getElementById('loadingOverlay');
+            const btn = document.getElementById('btnPay');
+            
+            overlay.style.display = 'flex';
+            btn.disabled = true;
+
+            try {
+                // Simulation d'attente réseau
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                const response = await fetch(`/api/club/payment/simulate-club`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_club: clubIdReel,
+                        amount: currentClubAmount
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    overlay.style.display = 'none';
+                    document.getElementById('successOverlay').style.display = 'flex';
+                    setTimeout(() => {
+                        window.location.href = 'espace.html';
+                    }, 3000);
+                } else {
+                    alert("Erreur: " + result.message);
+                    overlay.style.display = 'none';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erreur de connexion");
+                overlay.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -132,6 +132,12 @@
             border-left: 4px solid #059669;
         }
 
+        .alert-info {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-left: 4px solid #0369a1;
+        }
+
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -257,18 +263,22 @@
 
                 if (data.success) {
                     sessionStorage.setItem('clubConnected', 'true');
+                    sessionStorage.setItem('id_club_reel', data.id_club_reel);
                     sessionStorage.setItem('clubId', data.club_id);
                     sessionStorage.setItem('clubNom', data.nom_club);
                     sessionStorage.setItem('clubRepresentant', data.representant || '');
-                    sessionStorage.setItem('clubContact', data.contact || '');
-                    sessionStorage.setItem('clubEmail', data.email || '');
-                    sessionStorage.setItem('clubWhatsapp', data.whatsapp || '');
 
-                    showAlert('Connexion réussie ! Redirection en cours...', 'success');
-                    
-                    setTimeout(() => {
-                        window.location.href = 'espace.html';
-                    }, 1000);
+                    if (data.est_actif) {
+                        showAlert('Connexion réussie ! Redirection en cours...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'espace.html';
+                        }, 1000);
+                    } else {
+                        showAlert('Votre club n\'est pas à jour de son affiliation. Redirection vers la page de paiement...', 'info');
+                        setTimeout(() => {
+                            window.location.href = 'paiement-club.html';
+                        }, 2000);
+                    }
                 } else {
                     showAlert(data.message || 'Identifiant invalide', 'error');
                     loginBtn.disabled = false;

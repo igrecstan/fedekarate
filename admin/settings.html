@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres Système - FI-ADEKASH</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .settings-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .settings-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #1e1e2a;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .settings-card h2 i { color: #667eea; }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .setting-item:last-child { border-bottom: none; }
+        
+        .setting-info { flex: 1; }
+        .setting-info label { display: block; font-weight: 600; color: #334155; margin-bottom: 0.25rem; }
+        .setting-info p { font-size: 0.85rem; color: #64748b; }
+        
+        .setting-action {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 250px;
+        }
+        .setting-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 600;
+            text-align: right;
+            transition: border-color 0.2s;
+        }
+        .setting-input:focus { border-color: #667eea; outline: none; }
+        
+        .btn-save {
+            background: #1e1e2a;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-save:hover { background: #000; transform: translateY(-1px); }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .loader { text-align: center; padding: 3rem; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Paramètres Système</div>
+                <div class="topbar-user">
+                    <div class="avatar">AD</div>
+                    <span>Administrateur</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="page-header">
+                    <h2>Configurations</h2>
+                    <p>Gérez ici les tarifs et les paramètres globaux de la plateforme.</p>
+                </div>
+
+                <div class="settings-container" id="settingsContainer">
+                    <div class="loader"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Chargement des paramètres...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        async function loadSettings() {
+            const container = document.getElementById('settingsContainer');
+            try {
+                const response = await fetch('/api/admin/settings');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderSettings(data.settings);
+                } else {
+                    container.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-error">Erreur de connexion au serveur</div>`;
+            }
+        }
+
+        function renderSettings(settings) {
+            const container = document.getElementById('settingsContainer');
+            
+            // On peut regrouper par catégorie si on veut, ici on fait simple
+            let html = `
+                <div class="settings-card">
+                    <h2><i class="fas fa-money-bill-wave"></i> Tarifs des Affiliations</h2>
+            `;
+            
+            settings.forEach(s => {
+                html += `
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>${s.cle_config.replace(/_/g, ' ').toUpperCase()}</label>
+                            <p>${s.description || 'Pas de description'}</p>
+                        </div>
+                        <div class="setting-action">
+                            <input type="text" class="setting-input" id="input_${s.cle_config}" value="${s.valeur_config}">
+                            <button class="btn-save" onclick="saveSetting('${s.cle_config}')">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        async function saveSetting(key) {
+            const input = document.getElementById(`input_${key}`);
+            const val = input.value.trim();
+            const btn = input.nextElementSibling;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            try {
+                const response = await fetch(`/api/admin/settings/${key}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: val })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('Paramètre mis à jour avec succès');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Erreur de connexion', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i>';
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>

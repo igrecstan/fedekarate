@@ -273,8 +273,7 @@
                 const data = await response.json();
                 
                 if(data.success){
-                    alert('Affiliation réussie !');
-                    loadLicencies();
+                    window.location.href = `paiement.html?id=${id}`;
                 } else {
                     alert(data.message || 'Erreur lors de l\'affiliation');
                 }
@@ -330,9 +329,7 @@
                 });
                 const result = await response.json();
                 if(result.success) {
-                    alert('Nouveau licencié créé et affilié !');
-                    closeModal();
-                    loadLicencies();
+                    window.location.href = `paiement.html?id=${result.id}`;
                 } else {
                     alert(result.message);
                 }

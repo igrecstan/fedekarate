@@ -243,6 +243,23 @@ def get_saisons_clubs():
         if cursor: cursor.close()
         if conn: conn.close()
 
+@admin_bp.route('/saisons', methods=['GET'])
+def get_all_saisons():
+    """Toutes les saisons"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id_saison, libelle_saison FROM saison ORDER BY libelle_saison DESC")
+        saisons = cursor.fetchall()
+        return jsonify({'success': True, 'saisons': saisons})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
 @admin_bp.route('/secteurs/saison/<int:saison_id>', methods=['GET'])
 def get_secteurs_saison(saison_id):
     """Secteurs ayant des clubs affiliés pour une saison donnée"""
@@ -430,3 +447,102 @@ def create_club():
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
+@admin_bp.route('/settings', methods=['GET'])
+def get_settings():
+    """Récupère tous les paramètres de configuration"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM configuration")
+        settings = cursor.fetchall()
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/settings/<string:key>', methods=['PUT'])
+def update_setting(key):
+    """Met à jour un paramètre spécifique"""
+    data = request.get_json(silent=True) or {}
+    value = data.get('value')
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE configuration SET valeur_config = %s WHERE cle_config = %s", (value, key))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Paramètre mis à jour'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@admin_bp.route('/stats/sectorielles', methods=['GET'])
+def get_stats_sectorielles():
+    """Statistiques par secteur pour une saison donnée"""
+    saison_id = request.args.get('saison_id', type=int)
+    if not saison_id:
+        return jsonify({'success': False, 'message': 'saison_id requis'}), 400
+        
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Récupérer l'année de la saison
+        cursor.execute("SELECT libelle_saison FROM saison WHERE id_saison = %s", (saison_id,))
+        saison = cursor.fetchone()
+        if not saison:
+            return jsonify({'success': False, 'message': 'Saison non trouvée'}), 404
+            
+        annee = saison['libelle_saison']
+        
+        # Requête complexe pour tout calculer en un coup ou presque
+        # On itère sur les secteurs
+        query = """
+            SELECT 
+                s.id_secteur, 
+                s.nom_secteur as secteur,
+                (SELECT COUNT(*) FROM club c WHERE c.List_sect = s.id_secteur AND YEAR(c.created_At) = %s) as nouveau_club,
+                (SELECT COUNT(*) FROM clubs_saison cs WHERE cs.List_sect = s.id_secteur AND cs.List_saison = %s) as total_club,
+                (SELECT COUNT(*) FROM athletes a JOIN club c ON a.list_club = c.id_club WHERE c.List_sect = s.id_secteur AND YEAR(a.created_at) = %s) as nouveau_licencie,
+                (SELECT COUNT(*) FROM athletes_saison asai JOIN club c ON asai.list_club = c.id_club WHERE c.List_sect = s.id_secteur AND asai.list_saison = %s) as total_licencie,
+                (SELECT COUNT(*) FROM athletes_saison asai JOIN club c ON asai.list_club = c.id_club WHERE c.List_sect = s.id_secteur AND asai.list_saison = %s AND asai.list_grade >= 16) as total_ceinture_noire,
+                (SELECT COUNT(*) FROM athletes_saison asai JOIN club c ON asai.list_club = c.id_club WHERE c.List_sect = s.id_secteur AND asai.list_saison = %s AND (asai.assure = 1 OR asai.assure = b'1')) as total_assure
+            FROM secteur s
+            ORDER BY s.nom_secteur ASC
+        """
+        cursor.execute(query, (annee, saison_id, annee, saison_id, saison_id, saison_id))
+        sectoriel = cursor.fetchall()
+        
+        # Calculer le total global
+        totals = {
+            'secteur': '📌 Tous secteurs',
+            'nouveau_club': sum(row['nouveau_club'] for row in sectoriel),
+            'total_club': sum(row['total_club'] for row in sectoriel),
+            'nouveau_licencie': sum(row['nouveau_licencie'] for row in sectoriel),
+            'total_licencie': sum(row['total_licencie'] for row in sectoriel),
+            'total_ceinture_noire': sum(row['total_ceinture_noire'] for row in sectoriel),
+            'total_assure': sum(row['total_assure'] for row in sectoriel)
+        }
+        
+        return jsonify({
+            'success': True, 
+            'sectoriel': sectoriel,
+            'totalRow': totals
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_stats_sectorielles: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
